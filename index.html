@@ -12,81 +12,100 @@
     <meta property="fc:frame:button:1:target" content="https://the-sync.vercel.app" />
 
     <style>
-        body { margin: 0; background-color: black; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
+        body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; }
         
-        #stats-header { display: flex; justify-content: space-around; width: 100%; max-width: 500px; margin-bottom: 60px; font-weight: bold; align-items: center; }
-        .base-label { color: #5c6bc0; font-size: 1.5rem; } /* Blue */
-        .fc-label { color: #a78bfa; font-size: 1.5rem; }   /* Purple */
+        #stats-header { display: flex; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; z-index: 10; position: relative; }
+        .stat-item { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
+        .base-label { color: #0052ff; } 
+        .fc-label { color: #8a44f3; }
         .timer { font-size: 3.5rem; color: white; font-weight: 900; }
+        .header-logo { width: 24px; height: 24px; }
         
-        #game-area { position: relative; width: 100%; max-width: 400px; height: 300px; display: flex; justify-content: space-around; align-items: center; }
-        
-        /* The Targets */
-        .target-circle { 
-            width: 100px; height: 100px; 
-            border: 4px solid white; 
-            border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 3rem; font-weight: bold; color: white;
-            cursor: pointer; user-select: none; transition: transform 0.1s;
+        /* The Moving Targets */
+        .target-logo { 
+            width: 70px; height: 70px; 
+            position: absolute; cursor: pointer; user-select: none;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+            object-fit: contain;
         }
-        #btn-base { background-color: #5c6bc0; box-shadow: 0 0 20px rgba(92, 107, 192, 0.6); }
-        #btn-fc { background-color: #8a44f3; box-shadow: 0 0 20px rgba(138, 68, 243, 0.6); }
 
         /* Leaderboard */
         #leaderboard-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        .lb-box { width: 80%; text-align: center; border: 2px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; }
-        .share-btn { width: 100%; padding: 18px; background: #8a44f3; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
+        .lb-box { width: 85%; text-align: center; border: 1px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; max-width: 350px; }
+        .share-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
     <div id="stats-header">
-        <div class="base-label">BASE: <span id="baseVal">0</span></div>
+        <div class="stat-item base-label">
+            <img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/base-coin-crypto-icon.png" class="header-logo">
+            BASE: <span id="baseVal">0</span>
+        </div>
         <div class="timer" id="timerVal">15</div>
-        <div class="fc-label">FC: <span id="fcVal">0</span></div>
+        <div class="stat-item fc-label">
+            <img src="https://raw.githubusercontent.com/the-sync/assets/main/farcaster.png" class="header-logo" onerror="this.src='https://framerusercontent.com/images/7p9v3jG3TjWfD8fK8zE8U9qI.png'">
+            FC: <span id="fcVal">0</span>
+        </div>
     </div>
 
-    <div id="game-area">
-        <div id="btn-base" class="target-circle">B</div>
-        <div id="btn-fc" class="target-circle">F</div>
-    </div>
+    <img id="btn-base" class="target-logo" src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/base-coin-crypto-icon.png">
+    <img id="btn-fc" class="target-logo" src="https://raw.githubusercontent.com/the-sync/assets/main/farcaster.png" onerror="this.src='https://framerusercontent.com/images/7p9v3jG3TjWfD8fK8zE8U9qI.png'">
 
     <div id="leaderboard-modal">
         <div class="lb-box">
-            <h2 style="color:#a78bfa; letter-spacing: 2px;">GLOBAL RANKS</h2>
+            <h2 style="color:#a78bfa; margin-top:0;">GLOBAL RANKS</h2>
             <div id="leaderboard-data" style="margin: 20px 0; color: #ccc;">Syncing...</div>
-            <button id="share-btn" class="share-btn">SHARE RANK TO FARCASTER</button>
-            <button onclick="location.reload()" style="background:none; border:none; color:gray; margin-top:20px; cursor:pointer; text-decoration: underline;">PLAY AGAIN</button>
+            <button id="share-btn" class="share-btn">SHARE SCORE</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:gray; margin-top:20px; cursor:pointer; text-decoration:underline;">RETRY</button>
         </div>
     </div>
 
     <script>
-        let baseScore = 0;
-        let fcScore = 0;
-        let timeLeft = 15; // Per original design
-        let gameActive = true;
+        let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = true;
+
+        const targets = [
+            { el: document.getElementById('btn-base'), x: 50, y: 200, dx: 2.5, dy: 2.5 },
+            { el: document.getElementById('btn-fc'), x: 200, y: 350, dx: -2.5, dy: -2.5 }
+        ];
+
+        function moveTargets() {
+            if (!gameActive) return;
+            targets.forEach(t => {
+                t.x += t.dx;
+                t.y += t.dy;
+
+                // Bounce logic
+                if (t.x <= 10 || t.x >= window.innerWidth - 80) t.dx *= -1;
+                if (t.y <= 120 || t.y >= window.innerHeight - 80) t.dy *= -1;
+
+                t.el.style.left = t.x + 'px';
+                t.el.style.top = t.y + 'px';
+            });
+            requestAnimationFrame(moveTargets);
+        }
 
         function handleTap(type) {
-            if(!gameActive) return;
-            if(type === 'base') {
+            if (!gameActive) return;
+            if (type === 'base') {
                 baseScore++;
                 document.getElementById('baseVal').innerText = baseScore;
             } else {
                 fcScore++;
                 document.getElementById('fcVal').innerText = fcScore;
             }
-            // Add a little pop effect
-            const btn = type === 'base' ? document.getElementById('btn-base') : document.getElementById('btn-fc');
-            btn.style.transform = 'scale(1.1)';
-            setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            // Visual feedback
+            const el = type === 'base' ? document.getElementById('btn-base') : document.getElementById('btn-fc');
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => el.style.transform = 'scale(1)', 100);
         }
 
         document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
         document.getElementById('btn-base').addEventListener('mousedown', () => handleTap('base'));
-        
         document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
         document.getElementById('btn-fc').addEventListener('mousedown', () => handleTap('fc'));
+
+        moveTargets();
 
         const timerLoop = setInterval(() => {
             if (timeLeft > 0) {
@@ -102,16 +121,16 @@
         async function showLeaderboard() {
             document.getElementById('leaderboard-modal').style.display = 'flex';
             const finalScore = baseScore + fcScore;
-            const username = "Player";
             
             try {
-                // Post score to Vercel Redis
+                // Post score
                 await fetch('/api/score', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ username, score: finalScore }) 
+                    body: JSON.stringify({ username: "Player", score: finalScore }) 
                 });
                 
+                // Get ranks
                 const res = await fetch('/api/score');
                 const data = await res.json();
                 
@@ -124,13 +143,13 @@
                 }
                 document.getElementById('leaderboard-data').innerHTML = html;
 
+                // RELIABLE SHARE LOGIC
                 document.getElementById('share-btn').onclick = () => {
-                    const text = encodeURIComponent(`I scored ${finalScore} on THE SYNC! ⚡️ (Base: ${baseScore} | FC: ${fcScore})`);
-                    window.open(`https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`, '_blank');
+                    const text = `I scored ${finalScore} on THE SYNC! ⚡️ (Base: ${baseScore} | FC: ${fcScore})`;
+                    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${window.location.origin}`;
+                    window.location.href = shareUrl;
                 };
-            } catch (e) { 
-                document.getElementById('leaderboard-data').innerHTML = "Score: " + finalScore + " Saved!"; 
-            }
+            } catch (e) { document.getElementById('leaderboard-data').innerHTML = "Final Score: " + finalScore; }
         }
     </script>
 </body>
