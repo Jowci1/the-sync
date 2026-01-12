@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>THE SYNC | Jowci</title>
     
-    <meta property="fc:frame" content='{"version":"next","imageUrl":"https://the-sync.vercel.app/icon.png","button":{"title":"Play THE SYNC","action":{"type":"launch_frame","name":"THE SYNC","url":"https://your-vercel-link.vercel.app/","splashImageUrl":"https://your-vercel-link.vercel.app/icon.png","splashBackgroundColor":"#000000"}}}'>
+    <meta property="fc:frame" content='{"version":"next","imageUrl":"https://the-sync.vercel.app/icon.png","button":{"title":"Play THE SYNC","action":{"type":"launch_frame","name":"THE SYNC","url":"https://the-sync.vercel.app/","splashImageUrl":"https://the-sync.vercel.app/icon.png","splashBackgroundColor":"#000000"}}}'>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@farcaster/frame-sdk/dist/bundle.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk/dist/index.min.js"></script>
+
     <style>
         body { background-color: black; color: white; touch-action: manipulation; overflow: hidden; font-family: sans-serif; }
         .target { transition: all 0.08s ease-out; cursor: pointer; }
-        .base-glow { shadow-lg shadow-blue-500/50; }
-        .fc-glow { shadow-lg shadow-purple-500/50; }
+        .base-glow { box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5); }
+        .fc-glow { box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.5); }
     </style>
 </head>
 <body class="flex items-center justify-center h-screen w-full">
@@ -50,7 +52,18 @@
     <script>
         let basePoints = 0, fcPoints = 0, timeLeft = 15, gameActive = false, currentType = 'base';
 
-        if (window.farcaster && window.farcaster.sdk) { window.farcaster.sdk.actions.ready(); }
+        // 3. THE HANDSHAKE: This tells Warpcast to show the app
+        async function init() {
+            if (window.frame && window.frame.sdk) {
+                try {
+                    await window.frame.sdk.actions.ready();
+                    console.log("Farcaster SDK Ready");
+                } catch (e) {
+                    console.error("SDK error:", e);
+                }
+            }
+        }
+        init();
 
         function startGame() {
             basePoints = 0; fcPoints = 0; timeLeft = 15; gameActive = true;
@@ -81,6 +94,10 @@
 
         function handleTap() {
             if (!gameActive) return;
+            // Add haptic feedback if available
+            if (window.frame?.sdk?.actions?.haptics) {
+                window.frame.sdk.actions.haptics.impact();
+            }
             if (currentType === 'base') basePoints++; else fcPoints++;
             updateScores(); spawnTarget();
         }
@@ -101,9 +118,17 @@
         }
 
         function shareScore() {
-            const text = `I achieved a Sync Score of ${basePoints + fcPoints} on THE SYNC! 🔵🟣\nBuilt by Jowci`;
-            const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            const text = `I achieved a Sync Score of ${basePoints + fcPoints} on THE SYNC! 🔵🟣\nBuilt by @jowci`;
+            // V2 share logic
+            if (window.frame?.sdk?.actions?.composeCast) {
+                window.frame.sdk.actions.composeCast({
+                    text: text,
+                    embeds: ["https://the-sync.vercel.app"]
+                });
+            } else {
+                const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            }
         }
     </script>
 </body>
