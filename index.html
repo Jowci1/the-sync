@@ -7,34 +7,42 @@
 
     <meta property="fc:frame" content="vNext" />
     <meta property="fc:frame:image" content="https://the-sync.vercel.app/icon.png" />
-    <meta property="fc:frame:button:1" content="Play THE SYNC" />
-    <meta property="fc:frame:button:1:action" content="link" />
-    <meta property="fc:frame:button:1:target" content="https://the-sync.vercel.app" />
+    <meta property="fc:frame:button:1" content="ENTER GATE" />
 
     <style>
-        body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; }
+        body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        #stats-header { display: flex; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; z-index: 10; position: relative; }
+        /* THE GATE SCREEN */
+        #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
+        .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
+        .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
+        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
+
+        /* GAME UI */
+        #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
         .timer { font-size: 3.5rem; color: white; font-weight: 900; }
 
-        .target { position: absolute; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
-        
-        /* Official Base Blue Cube */
+        .target { display: none; position: absolute; cursor: pointer; user-select: none; align-items: center; justify-content: center; font-weight: bold; color: white; }
         #btn-base { width: 65px; height: 65px; background: #0052ff; border: 3px solid white; box-shadow: 0 0 15px #0052ff; border-radius: 8px; font-size: 1.8rem; }
-        
-        /* Official Farcaster Purple Circle */
         #btn-fc { width: 75px; height: 75px; background: #8a44f3; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 20px #8a44f3; font-size: 2.2rem; }
 
-        #leaderboard-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        /* LEADERBOARD */
+        #leaderboard-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         .lb-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; max-width: 350px; }
-        
-        /* THE FIXED BUTTON: A real <a> tag */
-        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.2rem; text-decoration: none; box-sizing: border-box; }
+        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 20px; text-decoration: none; font-size: 1.2rem; }
     </style>
 </head>
 <body>
+
+    <div id="gate-screen">
+        <img id="gate-logo" src="https://the-sync.vercel.app/icon.png" alt="Logo">
+        <div class="gate-title">THE SYNC</div>
+        <div class="gate-subtitle">Capture the Signal. Built by Jowci.</div>
+        <button class="enter-btn" onclick="startGame()">ENTER GATE</button>
+    </div>
 
     <div id="stats-header">
         <div class="base-label">BASE: <span id="baseVal">0</span></div>
@@ -48,21 +56,28 @@
     <div id="leaderboard-modal">
         <div class="lb-box">
             <h2 style="color:#a78bfa">GLOBAL RANKS</h2>
-            <div id="leaderboard-data" style="margin: 20px 0; color: #ccc;">Syncing...</div>
-            
+            <div id="leaderboard-data" style="margin: 20px 0; color: #ccc;">Syncing Score...</div>
             <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
-            
             <button onclick="location.reload()" style="background:none; border:none; color:gray; margin-top:20px; cursor:pointer; text-decoration:underline;">RETRY</button>
         </div>
     </div>
 
     <script>
-        let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = true;
-
+        let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = false;
         const targets = [
-            { el: document.getElementById('btn-base'), x: 50, y: 200, dx: 3, dy: 3, w: 65, h: 65 },
-            { el: document.getElementById('btn-fc'), x: 200, y: 350, dx: -3, dy: -3, w: 75, h: 75 }
+            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3, dy: 3, w: 65, h: 65 },
+            { el: document.getElementById('btn-fc'), x: 200, y: 400, dx: -3, dy: -3, w: 75, h: 75 }
         ];
+
+        function startGame() {
+            document.getElementById('gate-screen').style.display = 'none';
+            document.getElementById('stats-header').style.display = 'flex';
+            document.getElementById('btn-base').style.display = 'flex';
+            document.getElementById('btn-fc').style.display = 'flex';
+            gameActive = true;
+            moveTargets();
+            startTimer();
+        }
 
         function moveTargets() {
             if (!gameActive) return;
@@ -77,59 +92,56 @@
 
         function handleTap(type) {
             if (!gameActive) return;
-            if (type === 'base') {
-                baseScore++;
-                document.getElementById('baseVal').innerText = baseScore;
-            } else {
-                fcScore++;
-                document.getElementById('fcVal').innerText = fcScore;
-            }
+            if (type === 'base') { baseScore++; document.getElementById('baseVal').innerText = baseScore; }
+            else { fcScore++; document.getElementById('fcVal').innerText = fcScore; }
         }
 
-        document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
         document.getElementById('btn-base').addEventListener('mousedown', () => handleTap('base'));
-        document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
+        document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
         document.getElementById('btn-fc').addEventListener('mousedown', () => handleTap('fc'));
+        document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
 
-        moveTargets();
-
-        const timerLoop = setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft--;
-                document.getElementById('timerVal').innerText = timeLeft;
-            } else {
-                clearInterval(timerLoop);
-                gameActive = false;
-                endGame();
-            }
-        }, 1000);
+        function startTimer() {
+            const timerLoop = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    document.getElementById('timerVal').innerText = timeLeft;
+                } else {
+                    clearInterval(timerLoop);
+                    gameActive = false;
+                    endGame();
+                }
+            }, 1000);
+        }
 
         async function endGame() {
             const finalScore = baseScore + fcScore;
-            const modal = document.getElementById('leaderboard-modal');
-            const shareLink = document.getElementById('share-link');
+            document.getElementById('leaderboard-modal').style.display = 'flex';
             
-            // Set the share link IMMEDIATELY
+            // Set Share Link
             const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
-            shareLink.href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
-            
-            modal.style.display = 'flex';
+            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
 
             try {
+                // Wait for the score to save before fetching leaderboard
                 await fetch('/api/score', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
                     body: JSON.stringify({ username: "Player", score: finalScore }) 
                 });
+                
                 const res = await fetch('/api/score');
                 const data = await res.json();
                 let html = "";
                 for (let i = 0; i < Math.min(data.length, 10); i += 2) {
-                    html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;"><span>${(i/2)+1}. ${data[i]}</span><span style="color:#a78bfa">${data[i+1]}</span></div>`;
+                    html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;">
+                                <span>${(i/2)+1}. ${data[i]}</span>
+                                <span style="color:#a78bfa">${data[i+1]}</span>
+                             </div>`;
                 }
-                document.getElementById('leaderboard-data').innerHTML = html;
-            } catch (e) { 
-                document.getElementById('leaderboard-data').innerHTML = "Score: " + finalScore; 
+                document.getElementById('leaderboard-data').innerHTML = html || "Score: " + finalScore;
+            } catch (e) {
+                document.getElementById('leaderboard-data').innerHTML = "Score: " + finalScore;
             }
         }
     </script>
