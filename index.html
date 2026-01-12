@@ -12,81 +12,88 @@
     <meta property="fc:frame:button:1:target" content="https://the-sync.vercel.app" />
 
     <style>
-        body { margin: 0; background-color: black; color: #00ffff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
-        #ui { text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        h1 { font-size: 2.5rem; text-shadow: 0 0 10px #00ffff; margin: 0; }
-        #stats { font-size: 1.2rem; margin-top: 10px; }
-        #game-container { position: relative; border: 4px solid #00ffff; box-shadow: 0 0 25px #00ffff, inset 0 0 15px #00ffff; width: 350px; height: 350px; background: black; }
-        canvas { display: block; cursor: crosshair; }
+        body { margin: 0; background-color: black; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
         
-        /* LEADERBOARD OVERLAY */
-        #leaderboard-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .lb-content { width: 85%; }
-        .lb-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 10px 0; font-size: 0.9rem; }
-        .btn-share { width: 100%; padding: 15px; background: #00ffff; color: black; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px; font-family: inherit; }
+        #stats-header { display: flex; justify-content: space-around; width: 100%; max-width: 500px; margin-bottom: 60px; font-weight: bold; align-items: center; }
+        .base-label { color: #5c6bc0; font-size: 1.5rem; } /* Blue */
+        .fc-label { color: #a78bfa; font-size: 1.5rem; }   /* Purple */
+        .timer { font-size: 3.5rem; color: white; font-weight: 900; }
+        
+        #game-area { position: relative; width: 100%; max-width: 400px; height: 300px; display: flex; justify-content: space-around; align-items: center; }
+        
+        /* The Targets */
+        .target-circle { 
+            width: 100px; height: 100px; 
+            border: 4px solid white; 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 3rem; font-weight: bold; color: white;
+            cursor: pointer; user-select: none; transition: transform 0.1s;
+        }
+        #btn-base { background-color: #5c6bc0; box-shadow: 0 0 20px rgba(92, 107, 192, 0.6); }
+        #btn-fc { background-color: #8a44f3; box-shadow: 0 0 20px rgba(138, 68, 243, 0.6); }
+
+        /* Leaderboard */
+        #leaderboard-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .lb-box { width: 80%; text-align: center; border: 2px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; }
+        .share-btn { width: 100%; padding: 18px; background: #8a44f3; color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <h1>THE SYNC</h1>
-        <div id="stats">SCORE: <span id="scoreVal">0</span> | TIME: <span id="timeVal">30</span></div>
+    <div id="stats-header">
+        <div class="base-label">BASE: <span id="baseVal">0</span></div>
+        <div class="timer" id="timerVal">15</div>
+        <div class="fc-label">FC: <span id="fcVal">0</span></div>
     </div>
 
-    <div id="game-container">
-        <canvas id="gameCanvas" width="350" height="350"></canvas>
-        <div id="leaderboard-modal">
-            <div class="lb-content">
-                <h2 style="color:#00ffff; margin-bottom:15px; letter-spacing:3px;">GLOBAL RANKS</h2>
-                <div id="leaderboard-data" style="margin-bottom:20px;">Syncing scores...</div>
-                <button id="share-rank-btn" class="btn-share">SHARE RANK TO FARCASTER</button>
-                <button onclick="location.reload()" style="background:none; border:1px solid white; color:white; width:100%; padding:10px; margin-top:10px; border-radius:8px; cursor:pointer;">PLAY AGAIN</button>
-            </div>
+    <div id="game-area">
+        <div id="btn-base" class="target-circle">B</div>
+        <div id="btn-fc" class="target-circle">F</div>
+    </div>
+
+    <div id="leaderboard-modal">
+        <div class="lb-box">
+            <h2 style="color:#a78bfa; letter-spacing: 2px;">GLOBAL RANKS</h2>
+            <div id="leaderboard-data" style="margin: 20px 0; color: #ccc;">Syncing...</div>
+            <button id="share-btn" class="share-btn">SHARE RANK TO FARCASTER</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:gray; margin-top:20px; cursor:pointer; text-decoration: underline;">PLAY AGAIN</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let score = 0;
-        let timeLeft = 30;
+        let baseScore = 0;
+        let fcScore = 0;
+        let timeLeft = 15; // Per original design
         let gameActive = true;
 
-        const player = { x: 165, y: 165, size: 20 };
-        const target = { x: 50, y: 50, size: 20 };
-
-        function draw() {
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // Neon Target
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00ffff";
-            ctx.fillStyle = "#00ffff";
-            ctx.fillRect(target.x, target.y, target.size, target.size);
-            // Player Center
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "white";
-            ctx.fillRect(player.x, player.y, player.size, player.size);
-        }
-
-        function handleInput() {
+        function handleTap(type) {
             if(!gameActive) return;
-            score++;
-            document.getElementById('scoreVal').innerText = score;
-            target.x = Math.random() * (canvas.width - 25);
-            target.y = Math.random() * (canvas.height - 25);
-            draw();
+            if(type === 'base') {
+                baseScore++;
+                document.getElementById('baseVal').innerText = baseScore;
+            } else {
+                fcScore++;
+                document.getElementById('fcVal').innerText = fcScore;
+            }
+            // Add a little pop effect
+            const btn = type === 'base' ? document.getElementById('btn-base') : document.getElementById('btn-fc');
+            btn.style.transform = 'scale(1.1)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 100);
         }
 
-        canvas.addEventListener('mousedown', handleInput);
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(); });
+        document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
+        document.getElementById('btn-base').addEventListener('mousedown', () => handleTap('base'));
+        
+        document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
+        document.getElementById('btn-fc').addEventListener('mousedown', () => handleTap('fc'));
 
-        const timer = setInterval(() => {
+        const timerLoop = setInterval(() => {
             if (timeLeft > 0) {
                 timeLeft--;
-                document.getElementById('timeVal').innerText = timeLeft;
+                document.getElementById('timerVal').innerText = timeLeft;
             } else {
-                clearInterval(timer);
+                clearInterval(timerLoop);
                 gameActive = false;
                 showLeaderboard();
             }
@@ -94,34 +101,37 @@
 
         async function showLeaderboard() {
             document.getElementById('leaderboard-modal').style.display = 'flex';
-            const username = "Player"; 
-
+            const finalScore = baseScore + fcScore;
+            const username = "Player";
+            
             try {
-                // Post to your Vercel Redis
+                // Post score to Vercel Redis
                 await fetch('/api/score', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ username, score }) 
+                    body: JSON.stringify({ username, score: finalScore }) 
                 });
                 
-                // Get the Ranks
                 const res = await fetch('/api/score');
                 const data = await res.json();
                 
                 let html = "";
                 for (let i = 0; i < Math.min(data.length, 10); i += 2) {
-                    html += `<div class="lb-row"><span>${(i/2)+1}. ${data[i]}</span><span>${data[i+1]}</span></div>`;
+                    html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;">
+                                <span>${(i/2)+1}. ${data[i]}</span>
+                                <span style="color:#a78bfa">${data[i+1]}</span>
+                             </div>`;
                 }
                 document.getElementById('leaderboard-data').innerHTML = html;
 
-                // Share Link
-                const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent("I hit " + score + " on THE SYNC! ⚡️")}&embeds[]=${window.location.href}`;
-                document.getElementById('share-rank-btn').onclick = () => window.open(shareUrl, '_blank');
+                document.getElementById('share-btn').onclick = () => {
+                    const text = encodeURIComponent(`I scored ${finalScore} on THE SYNC! ⚡️ (Base: ${baseScore} | FC: ${fcScore})`);
+                    window.open(`https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`, '_blank');
+                };
             } catch (e) { 
-                document.getElementById('leaderboard-data').innerHTML = "Score Saved!";
+                document.getElementById('leaderboard-data').innerHTML = "Score: " + finalScore + " Saved!"; 
             }
         }
-        draw();
     </script>
 </body>
 </html>
