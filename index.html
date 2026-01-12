@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,46 +10,43 @@
     <meta property="fc:frame:button:1" content="ENTER GATE" />
 
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
         
-        /* Entrance Gate */
-        #gate-screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
-        #gate-logo { width: 110px; height: 110px; margin-bottom: 20px; border-radius: 20px; box-shadow: 0 0 20px rgba(74, 144, 226, 0.3); }
-        .gate-title { font-size: 3.2rem; font-style: italic; font-weight: 900; color: #4a90e2; margin: 0; letter-spacing: -1px; }
-        .gate-subtitle { color: #888; margin-bottom: 30px; font-size: 1rem; }
-        .enter-btn { padding: 16px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold; font-size: 1.3rem; cursor: pointer; text-transform: uppercase; }
+        /* The Gate Screen */
+        #gate { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; visibility: visible; }
+        #gate-logo { width: 100px; height: 100px; margin-bottom: 20px; border-radius: 20px; border: 1px solid #333; }
+        .gate-title { font-size: 3rem; font-style: italic; font-weight: 900; color: #4a90e2; margin: 0; }
+        .enter-btn { margin-top: 30px; padding: 16px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
 
-        /* Game UI */
-        #ui { display: none; position: absolute; top: 15px; width: 100%; justify-content: space-around; font-weight: bold; z-index: 10; pointer-events: none; align-items: center; }
-        .timer { font-size: 3.5rem; font-weight: 900; }
-        .score-label { font-size: 1.2rem; }
+        /* HUD */
+        #hud { display: none; position: absolute; top: 10px; width: 100%; justify-content: space-around; align-items: center; z-index: 10; pointer-events: none; }
+        .timer { font-size: 3rem; font-weight: 900; }
         
-        /* Interactive Elements */
-        .target { display: none; position: absolute; width: 85px; height: 85px; z-index: 5; touch-action: none; }
+        /* Targets */
+        .target { display: none; position: absolute; width: 80px; height: 80px; z-index: 5; }
         
-        /* Results */
-        #modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .box { border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; width: 100%; max-width: 340px; }
-        .share { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: #fff; border-radius: 12px; text-decoration: none; margin-top: 20px; font-weight: bold; font-size: 1.1rem; }
+        /* Modal */
+        #modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .box { border: 2px solid #8a44f3; padding: 25px; border-radius: 24px; background: #111; width: 90%; max-width: 320px; }
+        .share { display: block; width: 100%; padding: 15px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: #fff; border-radius: 12px; text-decoration: none; margin-top: 20px; font-weight: bold; }
 
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-3px, 3px); } 75% { transform: translate(3px, -3px); } }
-        .shake { animation: shake 0.12s; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 20% { transform: translate(-2px, 2px); } 80% { transform: translate(2px, -2px); } }
+        .shake { animation: shake 0.1s; }
     </style>
 </head>
-<body id="b">
+<body id="body">
 
-    <div id="gate-screen">
+    <div id="gate">
         <img id="gate-logo" src="https://the-sync.vercel.app/icon.png">
         <h1 class="gate-title">THE SYNC</h1>
-        <p class="gate-subtitle">Capture the Signal. Built by Jowci.</p>
         <button class="enter-btn" id="start-btn">ENTER GATE</button>
     </div>
 
-    <div id="ui">
-        <div class="score-label" style="color:#0052ff">BASE: <span id="bs">0</span></div>
+    <div id="hud">
+        <div style="color:#0052ff; font-weight: bold;">B: <span id="bs">0</span></div>
         <div class="timer" id="t">30</div>
-        <div class="score-label" style="color:#8a44f3">FC: <span id="fs">0</span></div>
+        <div style="color:#8a44f3; font-weight: bold;">F: <span id="fs">0</span></div>
     </div>
 
     <div id="target-b" class="target">
@@ -63,80 +60,78 @@
     <div id="modal">
         <div class="box">
             <div id="loyalty" style="font-weight:bold; margin-bottom:10px; font-size: 1.1rem;"></div>
-            <div id="quote" style="font-style:italic; font-size:0.9rem; color:#aaa; margin-bottom:20px; min-height: 50px;"></div>
-            <div style="font-size: 0.8rem; color: #777;">TOTAL SYNC SCORE</div>
-            <div style="font-size:4rem; font-weight:900; margin-bottom: 10px;" id="final">0</div>
+            <div id="quote" style="font-style:italic; font-size:0.85rem; color:#aaa; margin-bottom:15px; min-height: 40px;"></div>
+            <div id="final" style="font-size:3.5rem; font-weight:900;">0</div>
             <a id="share" href="#" class="share">SHARE SCORE</a>
-            <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:20px; text-decoration:underline; font-size: 0.9rem;">PLAY AGAIN</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:15px; text-decoration:underline;">RETRY</button>
         </div>
     </div>
 
     <script>
-        let bScore = 0, fScore = 0, time = 30, active = false;
-        const bEl = document.getElementById('target-b'), fEl = document.getElementById('target-f');
-        const pos = [{x:50, y:200, dx:3.5, dy:3.5}, {x:200, y:350, dx:-3.5, dy:-3.5}];
+        // Use very simple global variables to ensure Farcaster parses quickly
+        var bS = 0, fS = 0, tm = 30, gA = false;
+        var bE = document.getElementById('target-b'), fE = document.getElementById('target-f');
+        var p = [{x:50, y:200, dx:3.2, dy:3.2}, {x:200, y:350, dx:-3.2, dy:-3.2}];
 
-        const bQuotes = ["Base is for everyone.", "Based. Not loud.", "Secure, low-cost L2.", "Bring the billion on-chain.", "Economic freedom via Base."];
-        const fQuotes = ["Decentralized social.", "High-signal conversation.", "Cast, Recast, Build.", "User-owned identity.", "The town square of the future."];
-
-        function start() {
-            document.getElementById('gate-screen').style.display = 'none';
-            document.getElementById('ui').style.display = 'flex';
-            bEl.style.display = fEl.style.display = 'block';
-            active = true;
-            loop();
-            const itv = setInterval(() => {
-                if (time > 0) { time--; document.getElementById('t').innerText = time; }
-                else { clearInterval(itv); active = false; end(); }
+        document.getElementById('start-btn').onclick = function() {
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('hud').style.display = 'flex';
+            bE.style.display = fE.style.display = 'block';
+            gA = true;
+            tick();
+            var timerLoop = setInterval(function() {
+                if (tm > 0) { tm--; document.getElementById('t').innerText = tm; }
+                else { clearInterval(timerLoop); gA = false; done(); }
             }, 1000);
-        }
+        };
 
-        function loop() {
-            if (!active) return;
-            [bEl, fEl].forEach((el, i) => {
-                pos[i].x += pos[i].dx; pos[i].y += pos[i].dy;
-                if (pos[i].x < 5 || pos[i].x > window.innerWidth - 90) pos[i].dx *= -1;
-                if (pos[i].y < 110 || pos[i].y > window.innerHeight - 95) pos[i].dy *= -1;
-                el.style.left = pos[i].x + 'px'; el.style.top = pos[i].y + 'px';
+        function tick() {
+            if (!gA) return;
+            [bE, fE].forEach(function(el, i) {
+                p[i].x += p[i].dx; p[i].y += p[i].dy;
+                if (p[i].x < 5 || p[i].x > window.innerWidth - 85) p[i].dx *= -1;
+                if (p[i].y < 100 || p[i].y > window.innerHeight - 90) p[i].dy *= -1;
+                el.style.left = p[i].x + 'px'; el.style.top = p[i].y + 'px';
             });
-            requestAnimationFrame(loop);
+            requestAnimationFrame(tick);
         }
 
-        function tap(type, e) {
-            if (!active) return;
+        function hit(type, e) {
+            if (!gA) return;
             if (e && e.cancelable) e.preventDefault();
             if (navigator.vibrate) navigator.vibrate(40);
-            document.getElementById('b').classList.remove('shake');
-            void document.getElementById('b').offsetWidth;
-            document.getElementById('b').classList.add('shake');
-            if (type === 'b') { bScore++; document.getElementById('bs').innerText = bScore; }
-            else { fScore++; document.getElementById('fs').innerText = fScore; }
+            document.getElementById('body').classList.remove('shake');
+            void document.getElementById('body').offsetWidth;
+            document.getElementById('body').classList.add('shake');
+            if (type === 'b') { bS++; document.getElementById('bs').innerText = bS; }
+            else { fS++; document.getElementById('fs').innerText = fS; }
         }
 
-        // Direct binding for maximum compatibility
-        document.getElementById('start-btn').onclick = start;
-        bEl.ontouchstart = (e) => tap('b', e); 
-        bEl.onmousedown = (e) => tap('b', e);
-        fEl.ontouchstart = (e) => tap('f', e); 
-        fEl.onmousedown = (e) => tap('f', e);
+        // Direct Touch Events for Farcaster Webview stability
+        bE.ontouchstart = function(e) { hit('b', e); };
+        bE.onmousedown = function(e) { hit('b', e); };
+        fE.ontouchstart = function(e) { hit('f', e); };
+        fE.onmousedown = function(e) { hit('f', e); };
 
-        function end() {
-            const total = bScore + fScore;
+        function done() {
+            var total = bS + fS;
             document.getElementById('final').innerText = total;
-            const l = document.getElementById('loyalty'), q = document.getElementById('quote');
-            if (bScore > fScore) { 
-                l.innerText = "🔵 Your loyalty lies with Base"; l.style.color="#0052ff"; 
-                q.innerText = bQuotes[Math.floor(Math.random()*bQuotes.length)];
-            } else if (fScore > bScore) { 
-                l.innerText = "🟣 Your loyalty lies with Farcaster"; l.style.color="#8a44f3"; 
-                q.innerText = fQuotes[Math.floor(Math.random()*fQuotes.length)];
+            var l = document.getElementById('loyalty'), q = document.getElementById('quote');
+            
+            if (bS > fS) { 
+                l.innerText = "🔵 Loyalty: Base"; l.style.color="#0052ff"; 
+                q.innerText = "Base is for everyone. Built to bring the billion on-chain.";
+            } else if (fS > bS) { 
+                l.innerText = "🟣 Loyalty: Farcaster"; l.style.color="#8a44f3"; 
+                q.innerText = "Farcaster is the decentralized social town square.";
             } else { 
-                l.innerText = "⚡ YOU ARE PERFECTLY SYNCED"; l.style.color="#fff"; 
-                q.innerText = "Perfect balance between the social layer and the chain."; 
+                l.innerText = "⚡ PERFECT SYNC"; l.style.color="#fff"; 
+                q.innerText = "Perfect harmony between the chain and the social layer."; 
             }
+            
             document.getElementById('modal').style.display = 'flex';
-            const txt = encodeURIComponent(`${l.innerText}!\nSync Score: ${total} on THE SYNC! 🔵🟣\n@jowci`);
-            document.getElementById('share').href = `https://warpcast.com/~/compose?text=${txt}&embeds[]=${window.location.origin}`;
+            var txt = encodeURIComponent(l.innerText + "!\nScore: " + total + " on THE SYNC! 🔵🟣\n@jowci");
+            document.getElementById('share').href = "https://warpcast.com/~/compose?text=" + txt + "&embeds[]=" + window.location.origin;
         }
     </script>
 </body>
