@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>THE SYNC</title>
 
@@ -10,205 +10,133 @@
     <meta property="fc:frame:button:1" content="ENTER GATE" />
 
     <style>
-        body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
         
-        /* Shake Animation for "Crack" Feeling */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            20% { transform: translate(-3px, 0px) rotate(-1deg); }
-            40% { transform: translate(3px, 2px) rotate(1deg); }
-            60% { transform: translate(-3px, 1px) rotate(-1deg); }
-            80% { transform: translate(3px, -2px) rotate(1deg); }
-            100% { transform: translate(1px, -1px) rotate(0deg); }
-        }
-        .shake { animation: shake 0.15s; }
+        /* Entrance Gate */
+        #gate-screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
+        #gate-logo { width: 110px; height: 110px; margin-bottom: 20px; border-radius: 20px; box-shadow: 0 0 20px rgba(74, 144, 226, 0.3); }
+        .gate-title { font-size: 3.2rem; font-style: italic; font-weight: 900; color: #4a90e2; margin: 0; letter-spacing: -1px; }
+        .gate-subtitle { color: #888; margin-bottom: 30px; font-size: 1rem; }
+        .enter-btn { padding: 16px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold; font-size: 1.3rem; cursor: pointer; text-transform: uppercase; }
 
-        /* GATE SCREEN */
-        #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
-        .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
-        .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
-        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
+        /* Game UI */
+        #ui { display: none; position: absolute; top: 15px; width: 100%; justify-content: space-around; font-weight: bold; z-index: 10; pointer-events: none; align-items: center; }
+        .timer { font-size: 3.5rem; font-weight: 900; }
+        .score-label { font-size: 1.2rem; }
+        
+        /* Interactive Elements */
+        .target { display: none; position: absolute; width: 85px; height: 85px; z-index: 5; touch-action: none; }
+        
+        /* Results */
+        #modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .box { border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; width: 100%; max-width: 340px; }
+        .share { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: #fff; border-radius: 12px; text-decoration: none; margin-top: 20px; font-weight: bold; font-size: 1.1rem; }
 
-        /* GAME UI */
-        #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; z-index: 10; pointer-events: none; }
-        .base-label { color: #0052ff; font-size: 1.2rem; } 
-        .fc-label { color: #8a44f3; font-size: 1.2rem; }
-        .timer { font-size: 3.5rem; color: white; font-weight: 900; }
-
-        /* SVG TARGETS */
-        .target { display: none; position: absolute; cursor: pointer; user-select: none; z-index: 5; transition: transform 0.05s ease-out; width: 80px; height: 80px; }
-
-        /* FINAL RESULTS MODAL */
-        #score-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .score-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; max-width: 350px; }
-        .loyalty-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-        .app-quote { font-style: italic; color: #aaa; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.4; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-        .final-val { font-size: 3.5rem; font-weight: 900; color: white; margin-bottom: 10px; }
-        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; text-decoration: none; font-size: 1.1rem; box-sizing: border-box; }
-        .retry-btn { background: none; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-3px, 3px); } 75% { transform: translate(3px, -3px); } }
+        .shake { animation: shake 0.12s; }
     </style>
 </head>
-<body id="game-body">
+<body id="b">
 
     <div id="gate-screen">
         <img id="gate-logo" src="https://the-sync.vercel.app/icon.png">
-        <div class="gate-title">THE SYNC</div>
-        <div class="gate-subtitle">Capture the Signal. Built by Jowci.</div>
-        <button class="enter-btn" onclick="startGame()">ENTER GATE</button>
+        <h1 class="gate-title">THE SYNC</h1>
+        <p class="gate-subtitle">Capture the Signal. Built by Jowci.</p>
+        <button class="enter-btn" id="start-btn">ENTER GATE</button>
     </div>
 
-    <div id="stats-header">
-        <div class="base-label">BASE: <span id="baseVal">0</span></div>
-        <div class="timer" id="timerVal">30</div>
-        <div class="fc-label">FC: <span id="fcVal">0</span></div>
+    <div id="ui">
+        <div class="score-label" style="color:#0052ff">BASE: <span id="bs">0</span></div>
+        <div class="timer" id="t">30</div>
+        <div class="score-label" style="color:#8a44f3">FC: <span id="fs">0</span></div>
     </div>
 
-    <div id="btn-base" class="target">
-        <svg viewBox="0 0 100 100">
-            <rect x="10" y="10" width="80" height="80" rx="12" fill="#0052ff" stroke="white" stroke-width="5"/>
-            <text x="50" y="65" text-anchor="middle" font-size="40" font-weight="900" fill="white" font-family="sans-serif">B</text>
-        </svg>
+    <div id="target-b" class="target">
+        <svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" rx="15" fill="#0052ff" stroke="#fff" stroke-width="5"/><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="900" fill="#fff">B</text></svg>
     </div>
 
-    <div id="btn-fc" class="target">
-        <svg viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="#8a44f3" stroke="white" stroke-width="5"/>
-            <text x="50" y="65" text-anchor="middle" font-size="40" font-weight="900" fill="white" font-family="sans-serif">F</text>
-        </svg>
+    <div id="target-f" class="target">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#8a44f3" stroke="#fff" stroke-width="5"/><text x="50" y="65" text-anchor="middle" font-size="45" font-weight="900" fill="#fff">F</text></svg>
     </div>
 
-    <div id="score-modal">
-        <div class="score-box">
-            <div id="loyalty-display" class="loyalty-text">SYNCING...</div>
-            <div id="quote-display" class="app-quote">"Thinking..."</div>
-            <h2 style="color:#a78bfa; margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Total Sync Score</h2>
-            <div id="final-score-display" class="final-val">0</div>
-            <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
-            <button class="retry-btn" onclick="location.reload()">PLAY AGAIN</button>
+    <div id="modal">
+        <div class="box">
+            <div id="loyalty" style="font-weight:bold; margin-bottom:10px; font-size: 1.1rem;"></div>
+            <div id="quote" style="font-style:italic; font-size:0.9rem; color:#aaa; margin-bottom:20px; min-height: 50px;"></div>
+            <div style="font-size: 0.8rem; color: #777;">TOTAL SYNC SCORE</div>
+            <div style="font-size:4rem; font-weight:900; margin-bottom: 10px;" id="final">0</div>
+            <a id="share" href="#" class="share">SHARE SCORE</a>
+            <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:20px; text-decoration:underline; font-size: 0.9rem;">PLAY AGAIN</button>
         </div>
     </div>
 
     <script>
-        let baseScore = 0, fcScore = 0, timeLeft = 30, gameActive = false;
-        const gameBody = document.getElementById('game-body');
-        
-        const targets = [
-            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3.8, dy: 3.8, w: 80, h: 80 },
-            { el: document.getElementById('btn-fc'), x: 220, y: 400, dx: -3.8, dy: -3.8, w: 80, h: 80 }
-        ];
+        let bScore = 0, fScore = 0, time = 30, active = false;
+        const bEl = document.getElementById('target-b'), fEl = document.getElementById('target-f');
+        const pos = [{x:50, y:200, dx:3.5, dy:3.5}, {x:200, y:350, dx:-3.5, dy:-3.5}];
 
-        const baseQuotes = [
-            "Base is for everyone. Built to bring the next billion users on-chain.",
-            "Based. Not loud. Just building the future of the internet.",
-            "Base is a secure, low-cost, builder-friendly Ethereum L2.",
-            "All your Base are belong to you. Decentralization is the goal.",
-            "The mission: increase economic freedom in the world via Base.",
-            "Standardizing the internet on a shared, open-source platform.",
-            "Base is incubated by Coinbase and built on the open-source OP Stack.",
-            "Based and blue-pilled. The future of finance is here."
-        ];
+        const bQuotes = ["Base is for everyone.", "Based. Not loud.", "Secure, low-cost L2.", "Bring the billion on-chain.", "Economic freedom via Base."];
+        const fQuotes = ["Decentralized social.", "High-signal conversation.", "Cast, Recast, Build.", "User-owned identity.", "The town square of the future."];
 
-        const fcQuotes = [
-            "Farcaster is a sufficiently decentralized social network.",
-            "Interesting people, high-signal conversations. That's Farcaster.",
-            "Cast, Recast, and Build. The social layer of the crypto world.",
-            "Owned by the users, not the corporation. Your identity, your data.",
-            "Farcaster Frames: Turning simple posts into interactive mini-apps.",
-            "Quality over quantity. High signal is the Farcaster standard.",
-            "Built on Ethereum, Farcaster is the town square of the modular future.",
-            "Decentralized social is no longer a dream. It's Farcaster."
-        ];
-
-        const syncQuotes = [
-            "You are the bridge between the protocol and the people.",
-            "Perfect balance. You understand the chain is nothing without the community.",
-            "The ultimate builder. You are perfectly synced with the future.",
-            "On-chain social harmony achieved. You are a true citizen of the New Internet."
-        ];
-
-        function startGame() {
+        function start() {
             document.getElementById('gate-screen').style.display = 'none';
-            document.getElementById('stats-header').style.display = 'flex';
-            document.getElementById('btn-base').style.display = 'block';
-            document.getElementById('btn-fc').style.display = 'block';
-            gameActive = true;
-            moveTargets();
-            startTimer();
-        }
-
-        function moveTargets() {
-            if (!gameActive) return;
-            targets.forEach(t => {
-                t.x += t.dx; t.y += t.dy;
-                if (t.x <= 5 || t.x >= window.innerWidth - t.w - 5) t.dx *= -1;
-                if (t.y <= 130 || t.y >= window.innerHeight - t.h - 10) t.dy *= -1;
-                t.el.style.left = t.x + 'px'; t.el.style.top = t.y + 'px';
-            });
-            requestAnimationFrame(moveTargets);
-        }
-
-        function handleTap(type) {
-            if (!gameActive) return;
-            if (navigator.vibrate) navigator.vibrate(40);
-            
-            // Crack Effect
-            gameBody.classList.remove('shake');
-            void gameBody.offsetWidth; 
-            gameBody.classList.add('shake');
-
-            if (type === 'base') { 
-                baseScore++; document.getElementById('baseVal').innerText = baseScore; 
-            } else { 
-                fcScore++; document.getElementById('fcVal').innerText = fcScore; 
-            }
-        }
-
-        // Event Listeners for Touch and Mouse
-        document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
-        document.getElementById('btn-base').addEventListener('mousedown', (e) => { e.preventDefault(); handleTap('base'); });
-        document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
-        document.getElementById('btn-fc').addEventListener('mousedown', (e) => { e.preventDefault(); handleTap('fc'); });
-
-        function startTimer() {
-            const timerLoop = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    document.getElementById('timerVal').innerText = timeLeft;
-                } else {
-                    clearInterval(timerLoop);
-                    gameActive = false;
-                    endGame();
-                }
+            document.getElementById('ui').style.display = 'flex';
+            bEl.style.display = fEl.style.display = 'block';
+            active = true;
+            loop();
+            const itv = setInterval(() => {
+                if (time > 0) { time--; document.getElementById('t').innerText = time; }
+                else { clearInterval(itv); active = false; end(); }
             }, 1000);
         }
 
-        function endGame() {
-            const finalScore = baseScore + fcScore;
-            document.getElementById('final-score-display').innerText = finalScore;
-            const loyaltyDiv = document.getElementById('loyalty-display');
-            const quoteDiv = document.getElementById('quote-display');
-            let loyaltyTag = "";
+        function loop() {
+            if (!active) return;
+            [bEl, fEl].forEach((el, i) => {
+                pos[i].x += pos[i].dx; pos[i].y += pos[i].dy;
+                if (pos[i].x < 5 || pos[i].x > window.innerWidth - 90) pos[i].dx *= -1;
+                if (pos[i].y < 110 || pos[i].y > window.innerHeight - 95) pos[i].dy *= -1;
+                el.style.left = pos[i].x + 'px'; el.style.top = pos[i].y + 'px';
+            });
+            requestAnimationFrame(loop);
+        }
 
-            if (baseScore > fcScore) {
-                loyaltyTag = "🔵 Your loyalty lies with Base";
-                loyaltyDiv.style.color = "#0052ff";
-                quoteDiv.innerText = baseQuotes[Math.floor(Math.random() * baseQuotes.length)];
-            } else if (fcScore > baseScore) {
-                loyaltyTag = "🟣 Your loyalty lies with Farcaster";
-                loyaltyDiv.style.color = "#8a44f3";
-                quoteDiv.innerText = fcQuotes[Math.floor(Math.random() * fcQuotes.length)];
-            } else {
-                loyaltyTag = "⚡ YOU ARE PERFECTLY SYNCED";
-                loyaltyDiv.style.color = "#FFFFFF";
-                quoteDiv.innerText = syncQuotes[Math.floor(Math.random() * syncQuotes.length)];
+        function tap(type, e) {
+            if (!active) return;
+            if (e && e.cancelable) e.preventDefault();
+            if (navigator.vibrate) navigator.vibrate(40);
+            document.getElementById('b').classList.remove('shake');
+            void document.getElementById('b').offsetWidth;
+            document.getElementById('b').classList.add('shake');
+            if (type === 'b') { bScore++; document.getElementById('bs').innerText = bScore; }
+            else { fScore++; document.getElementById('fs').innerText = fScore; }
+        }
+
+        // Direct binding for maximum compatibility
+        document.getElementById('start-btn').onclick = start;
+        bEl.ontouchstart = (e) => tap('b', e); 
+        bEl.onmousedown = (e) => tap('b', e);
+        fEl.ontouchstart = (e) => tap('f', e); 
+        fEl.onmousedown = (e) => tap('f', e);
+
+        function end() {
+            const total = bScore + fScore;
+            document.getElementById('final').innerText = total;
+            const l = document.getElementById('loyalty'), q = document.getElementById('quote');
+            if (bScore > fScore) { 
+                l.innerText = "🔵 Your loyalty lies with Base"; l.style.color="#0052ff"; 
+                q.innerText = bQuotes[Math.floor(Math.random()*bQuotes.length)];
+            } else if (fScore > bScore) { 
+                l.innerText = "🟣 Your loyalty lies with Farcaster"; l.style.color="#8a44f3"; 
+                q.innerText = fQuotes[Math.floor(Math.random()*fQuotes.length)];
+            } else { 
+                l.innerText = "⚡ YOU ARE PERFECTLY SYNCED"; l.style.color="#fff"; 
+                q.innerText = "Perfect balance between the social layer and the chain."; 
             }
-
-            loyaltyDiv.innerText = loyaltyTag;
-            document.getElementById('score-modal').style.display = 'flex';
-            
-            const shareText = encodeURIComponent(`${loyaltyTag}!\nI achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
-            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${window.location.origin}`;
+            document.getElementById('modal').style.display = 'flex';
+            const txt = encodeURIComponent(`${l.innerText}!\nSync Score: ${total} on THE SYNC! 🔵🟣\n@jowci`);
+            document.getElementById('share').href = `https://warpcast.com/~/compose?text=${txt}&embeds[]=${window.location.origin}`;
         }
     </script>
 </body>
