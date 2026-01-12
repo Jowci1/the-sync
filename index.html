@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>THE SYNC</title>
+    
     <meta property="fc:frame" content="vNext" />
     <meta property="fc:frame:image" content="https://the-sync.vercel.app/icon.png" />
     <meta property="fc:frame:button:1" content="PLAY THE SYNC" />
@@ -9,83 +12,99 @@
     <meta property="fc:frame:button:1:target" content="https://the-sync.vercel.app" />
 
     <style>
-        /* Your game styles (canvas, body, etc.) go here */
-        body { margin: 0; overflow: hidden; background: #000; }
+        body { margin: 0; background-color: black; color: #0ff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        canvas { border: 2px solid #0ff; box-shadow: 0 0 20px #0ff; max-width: 90vw; max-height: 70vh; }
+        #ui { margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
+    <div id="ui">
+        <h1>THE SYNC</h1>
+        <p>SCORE: <span id="scoreText">0</span> | TIME: <span id="timerText">30</span></p>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
     <div id="leaderboard-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:400px; background:rgba(0,0,0,0.98); border:2px solid #0ff; border-radius:15px; z-index:10000; color:white; font-family:sans-serif; text-align:center; padding:20px; box-shadow: 0 0 30px #0ff;">
-        <h2 style="color:#0ff; text-transform:uppercase; letter-spacing:5px; margin-top:0;">Global Ranks</h2>
-        <div id="leaderboard-data" style="margin:20px 0; text-align:left; max-height:250px; overflow-y:auto; font-size:1.1rem;">
+        <h2 style="color:#0ff; text-transform:uppercase; letter-spacing:5px;">Global Ranks</h2>
+        <div id="leaderboard-data" style="margin:20px 0; text-align:left; max-height:200px; overflow-y:auto;">
             <p style="text-align:center;">Syncing scores...</p>
         </div>
-        <button id="share-rank-btn" style="width:100%; padding:15px; background:#0ff; border:none; color:black; font-weight:bold; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:1rem;">
-            SHARE MY RANK TO FARCASTER
-        </button>
-        <button onclick="location.reload()" style="width:100%; padding:12px; background:transparent; border:1px solid #fff; color:white; border-radius:8px; cursor:pointer; opacity:0.8;">
-            PLAY AGAIN
-        </button>
+        <button id="share-rank-btn" style="width:100%; padding:15px; background:#0ff; border:none; color:black; font-weight:bold; border-radius:8px; cursor:pointer; margin-bottom:12px;">SHARE RANK</button>
+        <button onclick="location.reload()" style="width:100%; padding:12px; background:transparent; border:1px solid #fff; color:white; border-radius:8px; cursor:pointer;">PLAY AGAIN</button>
     </div>
 
     <script>
-    /* =========================================
-       3. PASTE YOUR ORIGINAL GAME CODE HERE
-       (The part that defines 'score' and 'timeLeft')
-       ========================================= */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let timeLeft = 30;
+        let isGameOver = false;
 
+        // Simple Game Logic (The "Filling")
+        const player = { x: 200, y: 200, size: 20 };
+        const target = { x: Math.random() * 380, y: Math.random() * 380, size: 15 };
 
-    /* =========================================
-       4. THE LEADERBOARD LOGIC & AUTO-TRIGGER
-       ========================================= */
-    async function handleGameOver(finalScore) {
-        // Try to get Farcaster username if available
-        const username = window.farcasterUser?.username || "Player";
-        document.getElementById('leaderboard-modal').style.display = 'block';
-
-        try {
-            // Save score to Vercel Redis
-            await fetch('/api/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, score: finalScore })
-            });
-
-            // Fetch top 10
-            const response = await fetch('/api/score');
-            const scores = await response.json();
+        function update() {
+            if (isGameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let playerRank = "Top 10"; 
-            let html = "";
-            for (let i = 0; i < scores.length; i += 2) {
-                const rankNum = (i/2) + 1;
-                if (scores[i] === username) playerRank = `#${rankNum}`;
-                html += `<p style="margin:8px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
-                    <span>${rankNum}. <b>${scores[i]}</b></span>
-                    <span style="color:#0ff;">${scores[i+1]}</span>
-                </p>`;
-            }
-            document.getElementById('leaderboard-data').innerHTML = html;
+            // Draw Target
+            ctx.fillStyle = '#0ff';
+            ctx.fillRect(target.x, target.y, target.size, target.size);
+            
+            // Draw Player
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x, player.y, player.size, player.size);
 
-            // Interactive Farcaster Share
-            const shareText = `I hit Rank ${playerRank} on THE SYNC with ${finalScore} points! ⚡️`;
-            const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${window.location.href}`;
-            document.getElementById('share-rank-btn').onclick = () => window.open(shareUrl, '_blank');
-        } catch (e) { console.error(e); }
-    }
-
-    // Auto-trigger when timer hits 0
-    let leaderboardFired = false;
-    function checkGameStatus() {
-        if ((typeof timeLeft !== 'undefined' && timeLeft <= 0) || (typeof isGameOver !== 'undefined' && isGameOver === true)) {
-            if (!leaderboardFired) {
-                leaderboardFired = true;
-                handleGameOver(typeof score !== 'undefined' ? score : 0);
-            }
+            requestAnimationFrame(update);
         }
-        requestAnimationFrame(checkGameStatus);
-    }
-    checkGameStatus();
+
+        // Timer Logic
+        const gameTimer = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timerText').innerText = timeLeft;
+            } else {
+                clearInterval(gameTimer);
+                isGameOver = true;
+                handleGameOver(score); // Trigger the leaderboard
+            }
+        }, 1000);
+
+        // Click to score
+        canvas.addEventListener('mousedown', (e) => {
+            if (isGameOver) return;
+            score++;
+            document.getElementById('scoreText').innerText = score;
+            target.x = Math.random() * 370;
+            target.y = Math.random() * 370;
+        });
+
+        // LEADERBOARD LOGIC
+        async function handleGameOver(finalScore) {
+            const username = window.farcasterUser?.username || "Player";
+            document.getElementById('leaderboard-modal').style.display = 'block';
+            try {
+                await fetch('/api/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, score: finalScore })
+                });
+                const response = await fetch('/api/score');
+                const scores = await response.json();
+                let html = "";
+                for (let i = 0; i < scores.length; i += 2) {
+                    html += `<p>${(i/2)+1}. ${scores[i]}: <span style="color:#0ff">${scores[i+1]}</span></p>`;
+                }
+                document.getElementById('leaderboard-data').innerHTML = html;
+                const shareText = `I scored ${finalScore} on THE SYNC! ⚡️`;
+                const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${window.location.href}`;
+                document.getElementById('share-rank-btn').onclick = () => window.open(shareUrl, '_blank');
+            } catch (e) { console.error(e); }
+        }
+
+        update();
     </script>
 </body>
 </html>
