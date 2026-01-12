@@ -12,6 +12,7 @@
     <style>
         body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
+        /* Shake Animation for "Crack" Feeling */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
@@ -22,24 +23,27 @@
         }
         .shake { animation: shake 0.15s; }
 
+        /* GATE SCREEN */
         #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
         .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
         .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
         .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
 
+        /* GAME UI */
         #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; z-index: 10; pointer-events: none; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
         .timer { font-size: 3.5rem; color: white; font-weight: 900; }
 
-        /* SVG TARGET STYLES */
-        .target { display: none; position: absolute; cursor: pointer; user-select: none; z-index: 5; transition: transform 0.05s ease-out; width: 75px; height: 75px; }
+        /* SVG TARGETS */
+        .target { display: none; position: absolute; cursor: pointer; user-select: none; z-index: 5; transition: transform 0.05s ease-out; width: 80px; height: 80px; }
 
+        /* FINAL RESULTS MODAL */
         #score-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .score-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; max-width: 350px; }
         .loyalty-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-        .app-quote { font-style: italic; color: #aaa; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.4; }
+        .app-quote { font-style: italic; color: #aaa; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.4; min-height: 60px; display: flex; align-items: center; justify-content: center; }
         .final-val { font-size: 3.5rem; font-weight: 900; color: white; margin-bottom: 10px; }
         .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; text-decoration: none; font-size: 1.1rem; box-sizing: border-box; }
         .retry-btn { background: none; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline; }
@@ -62,15 +66,15 @@
 
     <div id="btn-base" class="target">
         <svg viewBox="0 0 100 100">
-            <rect x="10" y="10" width="80" height="80" rx="10" fill="#0052ff" stroke="white" stroke-width="4"/>
-            <text x="50" y="65" text-anchor="middle" font-size="45" font-weight="900" fill="white">B</text>
+            <rect x="10" y="10" width="80" height="80" rx="12" fill="#0052ff" stroke="white" stroke-width="5"/>
+            <text x="50" y="65" text-anchor="middle" font-size="40" font-weight="900" fill="white" font-family="sans-serif">B</text>
         </svg>
     </div>
 
     <div id="btn-fc" class="target">
         <svg viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="#8a44f3" stroke="white" stroke-width="4"/>
-            <text x="50" y="65" text-anchor="middle" font-size="45" font-weight="900" fill="white">F</text>
+            <circle cx="50" cy="50" r="45" fill="#8a44f3" stroke="white" stroke-width="5"/>
+            <text x="50" y="65" text-anchor="middle" font-size="40" font-weight="900" fill="white" font-family="sans-serif">F</text>
         </svg>
     </div>
 
@@ -78,7 +82,7 @@
         <div class="score-box">
             <div id="loyalty-display" class="loyalty-text">SYNCING...</div>
             <div id="quote-display" class="app-quote">"Thinking..."</div>
-            <h2 style="color:#a78bfa; margin: 0; font-size: 1rem;">TOTAL SYNC SCORE</h2>
+            <h2 style="color:#a78bfa; margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Total Sync Score</h2>
             <div id="final-score-display" class="final-val">0</div>
             <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
             <button class="retry-btn" onclick="location.reload()">PLAY AGAIN</button>
@@ -88,9 +92,10 @@
     <script>
         let baseScore = 0, fcScore = 0, timeLeft = 30, gameActive = false;
         const gameBody = document.getElementById('game-body');
+        
         const targets = [
-            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3.5, dy: 3.5, w: 75, h: 75 },
-            { el: document.getElementById('btn-fc'), x: 200, y: 400, dx: -3.5, dy: -3.5, w: 75, h: 75 }
+            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3.8, dy: 3.8, w: 80, h: 80 },
+            { el: document.getElementById('btn-fc'), x: 220, y: 400, dx: -3.8, dy: -3.8, w: 80, h: 80 }
         ];
 
         const baseQuotes = [
@@ -99,7 +104,9 @@
             "Base is a secure, low-cost, builder-friendly Ethereum L2.",
             "All your Base are belong to you. Decentralization is the goal.",
             "The mission: increase economic freedom in the world via Base.",
-            "Standardizing the internet on a shared, open-source platform."
+            "Standardizing the internet on a shared, open-source platform.",
+            "Base is incubated by Coinbase and built on the open-source OP Stack.",
+            "Based and blue-pilled. The future of finance is here."
         ];
 
         const fcQuotes = [
@@ -108,7 +115,16 @@
             "Cast, Recast, and Build. The social layer of the crypto world.",
             "Owned by the users, not the corporation. Your identity, your data.",
             "Farcaster Frames: Turning simple posts into interactive mini-apps.",
-            "Quality over quantity. High signal is the Farcaster standard."
+            "Quality over quantity. High signal is the Farcaster standard.",
+            "Built on Ethereum, Farcaster is the town square of the modular future.",
+            "Decentralized social is no longer a dream. It's Farcaster."
+        ];
+
+        const syncQuotes = [
+            "You are the bridge between the protocol and the people.",
+            "Perfect balance. You understand the chain is nothing without the community.",
+            "The ultimate builder. You are perfectly synced with the future.",
+            "On-chain social harmony achieved. You are a true citizen of the New Internet."
         ];
 
         function startGame() {
@@ -135,15 +151,24 @@
         function handleTap(type) {
             if (!gameActive) return;
             if (navigator.vibrate) navigator.vibrate(40);
+            
+            // Crack Effect
             gameBody.classList.remove('shake');
             void gameBody.offsetWidth; 
             gameBody.classList.add('shake');
-            if (type === 'base') { baseScore++; document.getElementById('baseVal').innerText = baseScore; }
-            else { fcScore++; document.getElementById('fcVal').innerText = fcScore; }
+
+            if (type === 'base') { 
+                baseScore++; document.getElementById('baseVal').innerText = baseScore; 
+            } else { 
+                fcScore++; document.getElementById('fcVal').innerText = fcScore; 
+            }
         }
 
+        // Event Listeners for Touch and Mouse
         document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
+        document.getElementById('btn-base').addEventListener('mousedown', (e) => { e.preventDefault(); handleTap('base'); });
         document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
+        document.getElementById('btn-fc').addEventListener('mousedown', (e) => { e.preventDefault(); handleTap('fc'); });
 
         function startTimer() {
             const timerLoop = setInterval(() => {
@@ -174,15 +199,16 @@
                 loyaltyDiv.style.color = "#8a44f3";
                 quoteDiv.innerText = fcQuotes[Math.floor(Math.random() * fcQuotes.length)];
             } else {
-                loyaltyTag = "⚡ You are perfectly synced";
-                loyaltyDiv.style.color = "white";
-                quoteDiv.innerText = "A perfect balance between the social layer and the chain.";
+                loyaltyTag = "⚡ YOU ARE PERFECTLY SYNCED";
+                loyaltyDiv.style.color = "#FFFFFF";
+                quoteDiv.innerText = syncQuotes[Math.floor(Math.random() * syncQuotes.length)];
             }
 
             loyaltyDiv.innerText = loyaltyTag;
             document.getElementById('score-modal').style.display = 'flex';
-            const text = encodeURIComponent(`${loyaltyTag}!\nI achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
-            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
+            
+            const shareText = encodeURIComponent(`${loyaltyTag}!\nI achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
+            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${shareText}&embeds[]=${window.location.origin}`;
         }
     </script>
 </body>
