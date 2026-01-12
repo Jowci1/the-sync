@@ -9,6 +9,8 @@
     <meta property="fc:frame:image" content="https://the-sync.vercel.app/icon.png" />
     <meta property="fc:frame:button:1" content="ENTER GATE" />
 
+    <script src="https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk/dist/index.min.js"></script>
+
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
@@ -75,6 +77,13 @@
     </div>
 
     <script>
+        // TELL WARPCAST THE GAME IS READY
+        window.addEventListener('load', () => {
+            if (window.farcaster && window.farcaster.sdk) {
+                window.farcaster.sdk.actions.ready();
+            }
+        });
+
         var bS = 0, fS = 0, tm = 30, gA = false;
         var bE = document.getElementById('target-b'), fE = document.getElementById('target-f');
         var p = [{x:50, y:200, dx:3.5, dy:3.5}, {x:200, y:350, dx:-3.5, dy:-3.5}];
@@ -148,7 +157,6 @@
             
             document.getElementById('modal').style.display = 'flex';
             
-            // Updated Share Logic
             var txt = encodeURIComponent(loyaltyTag + "!\nI achieved a Sync Score of " + total + " on THE SYNC! 🔵🟣\nBuilt by @jowci");
             document.getElementById('share-link').href = "https://warpcast.com/~/compose?text=" + txt + "&embeds[]=" + window.location.origin;
         }
