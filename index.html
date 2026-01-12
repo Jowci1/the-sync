@@ -11,28 +11,33 @@
 
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
         
         /* The Gate Screen */
-        #gate { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; visibility: visible; }
+        #gate { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
         #gate-logo { width: 100px; height: 100px; margin-bottom: 20px; border-radius: 20px; border: 1px solid #333; }
-        .gate-title { font-size: 3rem; font-style: italic; font-weight: 900; color: #4a90e2; margin: 0; }
-        .enter-btn { margin-top: 30px; padding: 16px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
+        .gate-title { font-size: 3rem; font-style: italic; font-weight: 900; color: #4a90e2; margin: 0; letter-spacing: -1px; }
+        .gate-subtitle { color: #888; margin-bottom: 30px; font-size: 1rem; }
+        .enter-btn { padding: 16px 60px; background: #fff; color: #000; border: none; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; text-transform: uppercase; }
 
         /* HUD */
-        #hud { display: none; position: absolute; top: 10px; width: 100%; justify-content: space-around; align-items: center; z-index: 10; pointer-events: none; }
-        .timer { font-size: 3rem; font-weight: 900; }
+        #hud { display: none; position: absolute; top: 15px; width: 100%; justify-content: space-around; align-items: center; z-index: 10; pointer-events: none; }
+        .timer { font-size: 3.5rem; font-weight: 900; }
+        .score-label { font-size: 1.2rem; font-weight: bold; }
         
-        /* Targets */
-        .target { display: none; position: absolute; width: 80px; height: 80px; z-index: 5; }
+        /* SVG Targets */
+        .target { display: none; position: absolute; width: 85px; height: 85px; z-index: 5; }
         
         /* Modal */
-        #modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .box { border: 2px solid #8a44f3; padding: 25px; border-radius: 24px; background: #111; width: 90%; max-width: 320px; }
-        .share { display: block; width: 100%; padding: 15px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: #fff; border-radius: 12px; text-decoration: none; margin-top: 20px; font-weight: bold; }
+        #modal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.98); flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .box { border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; width: 100%; max-width: 340px; }
+        .loyalty-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .app-quote { font-style: italic; color: #aaa; font-size: 0.85rem; margin-bottom: 20px; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+        .final-val { font-size: 4rem; font-weight: 900; margin-bottom: 10px; }
+        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: #fff; border-radius: 12px; text-decoration: none; margin-top: 20px; font-weight: bold; font-size: 1.1rem; }
 
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 20% { transform: translate(-2px, 2px); } 80% { transform: translate(2px, -2px); } }
-        .shake { animation: shake 0.1s; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 20% { transform: translate(-3px, 3px); } 80% { transform: translate(3px, -3px); } }
+        .shake { animation: shake 0.12s; }
     </style>
 </head>
 <body id="body">
@@ -40,13 +45,14 @@
     <div id="gate">
         <img id="gate-logo" src="https://the-sync.vercel.app/icon.png">
         <h1 class="gate-title">THE SYNC</h1>
+        <p class="gate-subtitle">Built by Jowci</p>
         <button class="enter-btn" id="start-btn">ENTER GATE</button>
     </div>
 
     <div id="hud">
-        <div style="color:#0052ff; font-weight: bold;">B: <span id="bs">0</span></div>
+        <div class="score-label" style="color:#0052ff">BASE: <span id="bs">0</span></div>
         <div class="timer" id="t">30</div>
-        <div style="color:#8a44f3; font-weight: bold;">F: <span id="fs">0</span></div>
+        <div class="score-label" style="color:#8a44f3">FC: <span id="fs">0</span></div>
     </div>
 
     <div id="target-b" class="target">
@@ -59,19 +65,32 @@
 
     <div id="modal">
         <div class="box">
-            <div id="loyalty" style="font-weight:bold; margin-bottom:10px; font-size: 1.1rem;"></div>
-            <div id="quote" style="font-style:italic; font-size:0.85rem; color:#aaa; margin-bottom:15px; min-height: 40px;"></div>
-            <div id="final" style="font-size:3.5rem; font-weight:900;">0</div>
-            <a id="share" href="#" class="share">SHARE SCORE</a>
-            <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:15px; text-decoration:underline;">RETRY</button>
+            <div id="loyalty" class="loyalty-text"></div>
+            <div id="quote" class="app-quote"></div>
+            <div style="font-size: 0.8rem; color: #777;">TOTAL SYNC SCORE</div>
+            <div id="final" class="final-val">0</div>
+            <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
+            <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:20px; text-decoration:underline;">PLAY AGAIN</button>
         </div>
     </div>
 
     <script>
-        // Use very simple global variables to ensure Farcaster parses quickly
         var bS = 0, fS = 0, tm = 30, gA = false;
         var bE = document.getElementById('target-b'), fE = document.getElementById('target-f');
-        var p = [{x:50, y:200, dx:3.2, dy:3.2}, {x:200, y:350, dx:-3.2, dy:-3.2}];
+        var p = [{x:50, y:200, dx:3.5, dy:3.5}, {x:200, y:350, dx:-3.5, dy:-3.5}];
+
+        var bQuotes = [
+            "Base is for everyone. Built to bring the billion on-chain.",
+            "Based. Not loud. Just building the future of the internet.",
+            "All your Base are belong to you.",
+            "Standardizing the internet on an open-source platform."
+        ];
+        var fQuotes = [
+            "Farcaster is a sufficiently decentralized social network.",
+            "Cast, Recast, and Build. The social layer of crypto.",
+            "Owned by the users, not the corporation.",
+            "Farcaster Frames: Turning posts into mini-apps."
+        ];
 
         document.getElementById('start-btn').onclick = function() {
             document.getElementById('gate').style.display = 'none';
@@ -90,7 +109,7 @@
             [bE, fE].forEach(function(el, i) {
                 p[i].x += p[i].dx; p[i].y += p[i].dy;
                 if (p[i].x < 5 || p[i].x > window.innerWidth - 85) p[i].dx *= -1;
-                if (p[i].y < 100 || p[i].y > window.innerHeight - 90) p[i].dy *= -1;
+                if (p[i].y < 110 || p[i].y > window.innerHeight - 90) p[i].dy *= -1;
                 el.style.left = p[i].x + 'px'; el.style.top = p[i].y + 'px';
             });
             requestAnimationFrame(tick);
@@ -107,31 +126,31 @@
             else { fS++; document.getElementById('fs').innerText = fS; }
         }
 
-        // Direct Touch Events for Farcaster Webview stability
-        bE.ontouchstart = function(e) { hit('b', e); };
-        bE.onmousedown = function(e) { hit('b', e); };
-        fE.ontouchstart = function(e) { hit('f', e); };
-        fE.onmousedown = function(e) { hit('f', e); };
+        bE.ontouchstart = function(e) { hit('b', e); }; bE.onmousedown = function(e) { hit('b', e); };
+        fE.ontouchstart = function(e) { hit('f', e); }; fE.onmousedown = function(e) { hit('f', e); };
 
         function done() {
             var total = bS + fS;
             document.getElementById('final').innerText = total;
             var l = document.getElementById('loyalty'), q = document.getElementById('quote');
-            
+            var loyaltyTag = "";
+
             if (bS > fS) { 
-                l.innerText = "🔵 Loyalty: Base"; l.style.color="#0052ff"; 
-                q.innerText = "Base is for everyone. Built to bring the billion on-chain.";
+                loyaltyTag = "🔵 Loyalty: Base"; l.innerText = loyaltyTag; l.style.color="#0052ff"; 
+                q.innerText = bQuotes[Math.floor(Math.random()*bQuotes.length)];
             } else if (fS > bS) { 
-                l.innerText = "🟣 Loyalty: Farcaster"; l.style.color="#8a44f3"; 
-                q.innerText = "Farcaster is the decentralized social town square.";
+                loyaltyTag = "🟣 Loyalty: Farcaster"; l.innerText = loyaltyTag; l.style.color="#8a44f3"; 
+                q.innerText = fQuotes[Math.floor(Math.random()*fQuotes.length)];
             } else { 
-                l.innerText = "⚡ PERFECT SYNC"; l.style.color="#fff"; 
-                q.innerText = "Perfect harmony between the chain and the social layer."; 
+                loyaltyTag = "⚡ PERFECT SYNC"; l.innerText = loyaltyTag; l.style.color="#fff"; 
+                q.innerText = "Perfect harmony between the social layer and the chain."; 
             }
             
             document.getElementById('modal').style.display = 'flex';
-            var txt = encodeURIComponent(l.innerText + "!\nScore: " + total + " on THE SYNC! 🔵🟣\n@jowci");
-            document.getElementById('share').href = "https://warpcast.com/~/compose?text=" + txt + "&embeds[]=" + window.location.origin;
+            
+            // Updated Share Logic
+            var txt = encodeURIComponent(loyaltyTag + "!\nI achieved a Sync Score of " + total + " on THE SYNC! 🔵🟣\nBuilt by @jowci");
+            document.getElementById('share-link').href = "https://warpcast.com/~/compose?text=" + txt + "&embeds[]=" + window.location.origin;
         }
     </script>
 </body>
