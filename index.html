@@ -1,73 +1,133 @@
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>THE SYNC | Jowci</title>
+<div id="leaderboard-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:400px; background:rgba(0,0,0,0.98); border:2px solid #0ff; border-radius:15px; z-index:10000; color:white; font-family:sans-serif; text-align:center; padding:20px; box-shadow: 0 0 30px #0ff;">
 
-    <meta property="fc:frame" content='{"version":"next","imageUrl":"https://the-sync.vercel.app/icon.png","button":{"title":"Play THE SYNC","action":{"type":"launch_frame","name":"THE SYNC","url":"https://your-vercel-link.vercel.app/","splashImageUrl":"https://your-vercel-link.vercel.app/icon.png","splashBackgroundColor":"#000000"}}}'>
-    <meta property="fc:frame" content='{"version":"next","imageUrl":"https://the-sync.vercel.app/icon.png","button":{"title":"Play THE SYNC","action":{"type":"launch_frame","name":"THE SYNC","url":"https://the-sync.vercel.app/","splashImageUrl":"https://the-sync.vercel.app/icon.png","splashBackgroundColor":"#000000"}}}'>
+    <h2 style="color:#0ff; text-transform:uppercase; letter-spacing:5px; margin-top:0;">Global Ranks</h2>
 
-<script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@farcaster/frame-sdk/dist/bundle.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@farcaster/frame-sdk/dist/index.min.js"></script>
+    <div id="leaderboard-data" style="margin:20px 0; text-align:left; max-height:250px; overflow-y:auto; font-size:1.1rem;">
 
-<style>
-body { background-color: black; color: white; touch-action: manipulation; overflow: hidden; font-family: sans-serif; }
-.target { transition: all 0.08s ease-out; cursor: pointer; }
-        .base-glow { shadow-lg shadow-blue-500/50; }
-        .fc-glow { shadow-lg shadow-purple-500/50; }
-        .base-glow { box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5); }
-        .fc-glow { box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.5); }
-</style>
-</head>
-<body class="flex items-center justify-center h-screen w-full">
-@@ -50,7 +52,18 @@ <h2 class="text-xl font-bold mb-2 text-gray-400">SYNC COMPLETE</h2>
+        <p style="text-align:center;">Syncing scores...</p>
+
+    </div>
+
+    <button id="share-rank-btn" style="width:100%; padding:15px; background:#0ff; border:none; color:black; font-weight:bold; border-radius:8px; cursor:pointer; margin-bottom:12px; font-size:1rem;">
+
+        SHARE MY RANK TO FARCASTER
+
+    </button>
+
+    <button onclick="location.reload()" style="width:100%; padding:12px; background:transparent; border:1px solid #fff; color:white; border-radius:8px; cursor:pointer; opacity:0.8;">
+
+        PLAY AGAIN
+
+    </button>
+
+</div>
+
+
+
 <script>
-let basePoints = 0, fcPoints = 0, timeLeft = 15, gameActive = false, currentType = 'base';
 
-        if (window.farcaster && window.farcaster.sdk) { window.farcaster.sdk.actions.ready(); }
-        // 3. THE HANDSHAKE: This tells Warpcast to show the app
-        async function init() {
-            if (window.frame && window.frame.sdk) {
-                try {
-                    await window.frame.sdk.actions.ready();
-                    console.log("Farcaster SDK Ready");
-                } catch (e) {
-                    console.error("SDK error:", e);
-                }
-            }
+// THE BRAIN: Logic to save and fetch scores
+
+async function handleGameOver(finalScore) {
+
+    const username = window.farcasterUser?.username || "Player";
+
+    document.getElementById('leaderboard-modal').style.display = 'block';
+
+
+
+    try {
+
+        // Save to your Vercel Redis database
+
+        await fetch('/api/score', {
+
+            method: 'POST',
+
+            headers: { 'Content-Type': 'application/json' },
+
+            body: JSON.stringify({ username, score: finalScore })
+
+        });
+
+
+
+        // Get the latest top 10
+
+        const response = await fetch('/api/score');
+
+        const scores = await response.json();
+
+        
+
+        let playerRank = "Top 10"; 
+
+        let html = "";
+
+        for (let i = 0; i < scores.length; i += 2) {
+
+            const rankNum = (i/2) + 1;
+
+            if (scores[i] === username) playerRank = `#${rankNum}`;
+
+            html += `<p style="margin:8px 0; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
+
+                <span>${rankNum}. <b>${scores[i]}</b></span>
+
+                <span style="color:#0ff;">${scores[i+1]}</span>
+
+            </p>`;
+
         }
-        init();
 
-function startGame() {
-basePoints = 0; fcPoints = 0; timeLeft = 15; gameActive = true;
-@@ -81,6 +94,10 @@ <h2 class="text-xl font-bold mb-2 text-gray-400">SYNC COMPLETE</h2>
+        document.getElementById('leaderboard-data').innerHTML = html;
 
-function handleTap() {
-if (!gameActive) return;
-            // Add haptic feedback if available
-            if (window.frame?.sdk?.actions?.haptics) {
-                window.frame.sdk.actions.haptics.impact();
-            }
-if (currentType === 'base') basePoints++; else fcPoints++;
-updateScores(); spawnTarget();
-}
-@@ -101,9 +118,17 @@ <h2 class="text-xl font-bold mb-2 text-gray-400">SYNC COMPLETE</h2>
+
+
+        // Interactive Farcaster Share
+
+        const shareText = `I hit Rank ${playerRank} on THE SYNC with ${finalScore} points! ⚡️`;
+
+        const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${window.location.href}`;
+
+        document.getElementById('share-rank-btn').onclick = () => window.open(shareUrl, '_blank');
+
+    } catch (e) { 
+
+        console.error(e); 
+
+        document.getElementById('leaderboard-data').innerHTML = "<p style='text-align:center;'>Score saved! Play again to refresh.</p>";
+
+    }
+
 }
 
-function shareScore() {
-            const text = `I achieved a Sync Score of ${basePoints + fcPoints} on THE SYNC! 🔵🟣\nBuilt by Jowci`;
-            const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
-            const text = `I achieved a Sync Score of ${basePoints + fcPoints} on THE SYNC! 🔵🟣\nBuilt by @jowci`;
-            // V2 share logic
-            if (window.frame?.sdk?.actions?.composeCast) {
-                window.frame.sdk.actions.composeCast({
-                    text: text,
-                    embeds: ["https://the-sync.vercel.app"]
-                });
-            } else {
-                const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}`;
-                window.open(url, '_blank');
-            }
+
+
+// THE SCOUT: This automatically watches your game for the timer to hit 0
+
+let leaderboardFired = false;
+
+function checkGameStatus() {
+
+    // Looks for your game's timer (timeLeft) or game state (isGameOver)
+
+    if ((typeof timeLeft !== 'undefined' && timeLeft <= 0) || (typeof isGameOver !== 'undefined' && isGameOver === true)) {
+
+        if (!leaderboardFired) {
+
+            leaderboardFired = true;
+
+            handleGameOver(typeof score !== 'undefined' ? score : 0);
+
+        }
+
+    }
+
+    requestAnimationFrame(checkGameStatus);
+
 }
+
+checkGameStatus();
+
 </script>
-</body>
