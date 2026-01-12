@@ -12,7 +12,7 @@
     <style>
         body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* Screen Shake Animation for "Crack" Feeling */
+        /* Shake Animation for "Crack" Feeling */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
@@ -23,13 +23,14 @@
         }
         .shake { animation: shake 0.15s; }
 
+        /* THE GATE SCREEN */
         #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
         .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
         .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
-        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; margin-bottom: 15px; width: 280px; }
-        .view-lb-btn { background: transparent; color: #8a44f3; border: 2px solid #8a44f3; padding: 12px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 280px; }
+        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
 
+        /* GAME UI */
         #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; pointer-events: none; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
@@ -39,11 +40,12 @@
         #btn-base { width: 65px; height: 65px; background: #0052ff; border: 3px solid white; box-shadow: 0 0 15px #0052ff; border-radius: 8px; font-size: 1.8rem; }
         #btn-fc { width: 75px; height: 75px; background: #8a44f3; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 20px #8a44f3; font-size: 2.2rem; }
 
-        #leaderboard-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
-        .lb-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; max-width: 350px; }
-        #leaderboard-data { margin: 20px 0; color: #ccc; max-height: 250px; overflow-y: auto; text-align: left; }
-        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; text-decoration: none; font-size: 1.2rem; box-sizing: border-box; }
-        .close-btn { background: none; border: none; color: #888; margin-top: 20px; cursor: pointer; text-decoration: underline; }
+        /* FINAL SCORE POPUP */
+        #score-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+        .score-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; max-width: 350px; }
+        .final-val { font-size: 4rem; font-weight: 900; color: white; margin: 10px 0; }
+        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 20px; text-decoration: none; font-size: 1.2rem; box-sizing: border-box; }
+        .retry-btn { background: none; border: none; color: #888; margin-top: 20px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body id="game-body">
@@ -53,7 +55,6 @@
         <div class="gate-title">THE SYNC</div>
         <div class="gate-subtitle">Capture the Signal. Built by Jowci.</div>
         <button class="enter-btn" onclick="startGame()">ENTER GATE</button>
-        <button class="view-lb-btn" onclick="showLeaderboard(false)">VIEW RANKS</button>
     </div>
 
     <div id="stats-header">
@@ -65,12 +66,12 @@
     <div id="btn-base" class="target">B</div>
     <div id="btn-fc" class="target">F</div>
 
-    <div id="leaderboard-modal">
-        <div class="lb-box">
-            <h2 style="color:#a78bfa; margin-top: 0;">GLOBAL RANKS</h2>
-            <div id="leaderboard-data">Loading ranks...</div>
-            <a id="share-link" href="#" class="share-btn" style="display:none;">SHARE SCORE</a>
-            <button id="lb-close" class="close-btn" onclick="closeLeaderboard()">CLOSE</button>
+    <div id="score-modal">
+        <div class="score-box">
+            <h2 style="color:#a78bfa; margin-top: 0;">FINAL SCORE</h2>
+            <div id="final-score-display" class="final-val">0</div>
+            <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
+            <button class="retry-btn" onclick="location.reload()">PLAY AGAIN</button>
         </div>
     </div>
 
@@ -106,12 +107,10 @@
         function handleTap(type) {
             if (!gameActive) return;
 
-            // 1. Vibration
+            // Haptic & Shake
             if (navigator.vibrate) navigator.vibrate(40);
-
-            // 2. Screen Shake (The "Crack" feel)
             gameBody.classList.remove('shake');
-            void gameBody.offsetWidth; // Trigger reflow
+            void gameBody.offsetWidth; 
             gameBody.classList.add('shake');
 
             if (type === 'base') { 
@@ -132,57 +131,19 @@
                 } else {
                     clearInterval(timerLoop);
                     gameActive = false;
-                    showLeaderboard(true);
+                    endGame();
                 }
             }, 1000);
         }
 
-        async function showLeaderboard(isGameOver) {
-            const modal = document.getElementById('leaderboard-modal');
-            const dataDiv = document.getElementById('leaderboard-data');
-            const shareBtn = document.getElementById('share-link');
-            const closeBtn = document.getElementById('lb-close');
+        function endGame() {
+            const finalScore = baseScore + fcScore;
+            document.getElementById('final-score-display').innerText = finalScore;
+            document.getElementById('score-modal').style.display = 'flex';
             
-            modal.style.display = 'flex';
-            dataDiv.innerHTML = "Syncing...";
-
-            if (isGameOver) {
-                const finalScore = baseScore + fcScore;
-                const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
-                shareBtn.href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
-                shareBtn.style.display = 'block';
-                closeBtn.innerText = "RETRY";
-                closeBtn.onclick = () => location.reload();
-
-                try {
-                    await fetch('/api/score', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ username: "Player", score: finalScore }) 
-                    });
-                } catch(e) { console.error("Save failed"); }
-            }
-
-            // Fixed Leaderboard Fetch
-            try {
-                const res = await fetch('/api/score?t=' + Date.now()); // Prevent caching
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                let html = "";
-                for (let i = 0; i < Math.min(data.length, 20); i += 2) {
-                    html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;">
-                                <span>${(i/2)+1}. ${data[i]}</span>
-                                <span style="color:#a78bfa">${data[i+1]}</span>
-                             </div>`;
-                }
-                dataDiv.innerHTML = html || "No scores yet!";
-            } catch (e) {
-                dataDiv.innerHTML = "<div style='color:red;'>Database Sync Error. <br><button onclick='location.reload()' style='color:white; background:none; border:1px solid white; margin-top:10px; padding:5px;'>Retry</button></div>";
-            }
-        }
-
-        function closeLeaderboard() {
-            document.getElementById('leaderboard-modal').style.display = 'none';
+            // Fixed Share Link
+            const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
+            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
         }
     </script>
 </body>
