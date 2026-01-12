@@ -3,11 +3,11 @@
   "frame": {
     "version": "1",
     "name": "THE SYNC",
-    "homeUrl": "https://your-vercel-link.vercel.app",
-    "iconUrl": "https://your-vercel-link.vercel.app/icon.png",
-    "imageUrl": "https://your-vercel-link.vercel.app/icon.png",
+    "homeUrl": "https://the-sync.vercel.app",
+    "iconUrl": "https://the-sync.vercel.app/icon.png",
+    "imageUrl": "https://the-sync.vercel.app/icon.png",
     "buttonTitle": "Play THE SYNC",
-    "splashImageUrl": "https://your-vercel-link.vercel.app/icon.png",
+    "splashImageUrl": "https://the-sync.vercel.app/icon.png",
     "splashBackgroundColor": "#000000"
   }
 }
