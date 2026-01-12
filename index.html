@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>THE SYNC</title>
-    
+
     <meta property="fc:frame" content="vNext" />
     <meta property="fc:frame:image" content="https://the-sync.vercel.app/icon.png" />
     <meta property="fc:frame:button:1" content="PLAY THE SYNC" />
@@ -12,26 +12,39 @@
     <meta property="fc:frame:button:1:target" content="https://the-sync.vercel.app" />
 
     <style>
-        body { margin: 0; background-color: black; color: #0ff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        canvas { border: 2px solid #0ff; box-shadow: 0 0 20px #0ff; max-width: 90vw; max-height: 70vh; }
-        #ui { margin-top: 10px; text-align: center; }
+        body { margin: 0; background-color: black; color: #00ffff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
+        #ui { text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 2.2rem; text-shadow: 0 0 10px #00ffff; margin: 0; }
+        #stats { font-size: 1rem; margin-top: 10px; }
+        #game-container { position: relative; border: 4px solid #00ffff; box-shadow: 0 0 20px #00ffff, inset 0 0 10px #00ffff; width: 320px; height: 320px; background: black; }
+        canvas { display: block; cursor: crosshair; }
+        
+        /* LEADERBOARD OVERLAY */
+        #leaderboard-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        .lb-content { width: 85%; text-align: center; }
+        .lb-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0; font-size: 0.9rem; }
+        .btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; font-family: inherit; }
+        .btn-share { background: #00ffff; color: black; }
+        .btn-retry { background: transparent; border: 1px solid white; color: white; }
     </style>
 </head>
 <body>
 
     <div id="ui">
         <h1>THE SYNC</h1>
-        <p>SCORE: <span id="scoreText">0</span> | TIME: <span id="timerText">30</span></p>
+        <div id="stats">SCORE: <span id="scoreVal">0</span> | TIME: <span id="timeVal">30</span></div>
     </div>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <div id="leaderboard-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:400px; background:rgba(0,0,0,0.98); border:2px solid #0ff; border-radius:15px; z-index:10000; color:white; font-family:sans-serif; text-align:center; padding:20px; box-shadow: 0 0 30px #0ff;">
-        <h2 style="color:#0ff; text-transform:uppercase; letter-spacing:5px;">Global Ranks</h2>
-        <div id="leaderboard-data" style="margin:20px 0; text-align:left; max-height:200px; overflow-y:auto;">
-            <p style="text-align:center;">Syncing scores...</p>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="320" height="320"></canvas>
+        <div id="leaderboard-modal">
+            <div class="lb-content">
+                <h2 style="color:#00ffff; margin-bottom:15px; letter-spacing:3px;">GLOBAL RANKS</h2>
+                <div id="leaderboard-data" style="margin-bottom:20px; text-align:left;">Syncing...</div>
+                <button id="share-rank-btn" class="btn btn-share">SHARE RANK TO FARCASTER</button>
+                <button onclick="location.reload()" class="btn btn-retry">PLAY AGAIN</button>
+            </div>
         </div>
-        <button id="share-rank-btn" style="width:100%; padding:15px; background:#0ff; border:none; color:black; font-weight:bold; border-radius:8px; cursor:pointer; margin-bottom:12px;">SHARE RANK</button>
-        <button onclick="location.reload()" style="width:100%; padding:12px; background:transparent; border:1px solid #fff; color:white; border-radius:8px; cursor:pointer;">PLAY AGAIN</button>
     </div>
 
     <script>
@@ -39,72 +52,81 @@
         const ctx = canvas.getContext('2d');
         let score = 0;
         let timeLeft = 30;
-        let isGameOver = false;
+        let gameActive = true;
 
-        // Simple Game Logic (The "Filling")
-        const player = { x: 200, y: 200, size: 20 };
-        const target = { x: Math.random() * 380, y: Math.random() * 380, size: 15 };
+        const player = { x: 150, y: 150, size: 22 };
+        const target = { x: 50, y: 50, size: 18 };
 
-        function update() {
-            if (isGameOver) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw Target
-            ctx.fillStyle = '#0ff';
+            // Draw Target (Neon Square)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ffff";
+            ctx.fillStyle = "#00ffff";
             ctx.fillRect(target.x, target.y, target.size, target.size);
             
-            // Draw Player
-            ctx.fillStyle = '#fff';
+            // Draw Player (Solid White)
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "white";
             ctx.fillRect(player.x, player.y, player.size, player.size);
-
-            requestAnimationFrame(update);
         }
 
-        // Timer Logic
-        const gameTimer = setInterval(() => {
+        function handleInput(e) {
+            if(!gameActive) return;
+            score++;
+            document.getElementById('scoreVal').innerText = score;
+            target.x = Math.random() * (canvas.width - 25);
+            target.y = Math.random() * (canvas.height - 25);
+            draw();
+        }
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(); });
+        canvas.addEventListener('mousedown', handleInput);
+
+        const timer = setInterval(() => {
             if (timeLeft > 0) {
                 timeLeft--;
-                document.getElementById('timerText').innerText = timeLeft;
+                document.getElementById('timeVal').innerText = timeLeft;
             } else {
-                clearInterval(gameTimer);
-                isGameOver = true;
-                handleGameOver(score); // Trigger the leaderboard
+                clearInterval(timer);
+                gameActive = false;
+                showResults();
             }
         }, 1000);
 
-        // Click to score
-        canvas.addEventListener('mousedown', (e) => {
-            if (isGameOver) return;
-            score++;
-            document.getElementById('scoreText').innerText = score;
-            target.x = Math.random() * 370;
-            target.y = Math.random() * 370;
-        });
-
-        // LEADERBOARD LOGIC
-        async function handleGameOver(finalScore) {
+        async function showResults() {
+            document.getElementById('leaderboard-modal').style.display = 'flex';
             const username = window.farcasterUser?.username || "Player";
-            document.getElementById('leaderboard-modal').style.display = 'block';
+            
             try {
-                await fetch('/api/score', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, score: finalScore })
+                // 1. Save score to database
+                await fetch('/api/score', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username, score }) 
                 });
-                const response = await fetch('/api/score');
-                const scores = await response.json();
+                
+                // 2. Fetch top scores
+                const res = await fetch('/api/score');
+                const data = await res.json();
+                
                 let html = "";
-                for (let i = 0; i < scores.length; i += 2) {
-                    html += `<p>${(i/2)+1}. ${scores[i]}: <span style="color:#0ff">${scores[i+1]}</span></p>`;
+                for (let i = 0; i < Math.min(data.length, 10); i += 2) {
+                    html += `<div class="lb-row"><span>${(i/2)+1}. ${data[i]}</span><span>${data[i+1]}</span></div>`;
                 }
                 document.getElementById('leaderboard-data').innerHTML = html;
-                const shareText = `I scored ${finalScore} on THE SYNC! ⚡️`;
-                const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${window.location.href}`;
+
+                // 3. Setup Share Button
+                const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent("I hit " + score + " points on THE SYNC! ⚡️")}&embeds[]=${window.location.href}`;
                 document.getElementById('share-rank-btn').onclick = () => window.open(shareUrl, '_blank');
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                document.getElementById('leaderboard-data').innerHTML = "<p>Score Saved!</p>";
+            }
         }
 
-        update();
+        draw();
     </script>
 </body>
 </html>
