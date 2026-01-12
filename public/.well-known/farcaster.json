@@ -11,7 +11,7 @@
     "homeUrl": "https://the-sync.vercel.app",
     "imageUrl": "https://the-sync.vercel.app/image.png",
     "buttonTitle": "Check this out",
-    "splashImageUrl": "https://the-sync.vercel.app/splash.png",
+    "splashImageUrl": "https://the-sync.vercel.app/icon.png",
     "splashBackgroundColor": "#eeccff",
     "webhookUrl": "https://the-sync.vercel.app/api/webhook"
   }
