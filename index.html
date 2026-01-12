@@ -12,14 +12,13 @@
     <style>
         body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* THE GATE SCREEN */
         #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
         .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
         .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
-        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
+        .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; margin-bottom: 15px; width: 280px; }
+        .view-lb-btn { background: transparent; color: #8a44f3; border: 2px solid #8a44f3; padding: 12px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 280px; }
 
-        /* GAME UI */
         #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
@@ -29,19 +28,21 @@
         #btn-base { width: 65px; height: 65px; background: #0052ff; border: 3px solid white; box-shadow: 0 0 15px #0052ff; border-radius: 8px; font-size: 1.8rem; }
         #btn-fc { width: 75px; height: 75px; background: #8a44f3; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 20px #8a44f3; font-size: 2.2rem; }
 
-        /* LEADERBOARD */
-        #leaderboard-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #leaderboard-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .lb-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 25px; border-radius: 20px; background: #111; max-width: 350px; }
-        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 20px; text-decoration: none; font-size: 1.2rem; }
+        #leaderboard-data { margin: 20px 0; color: #ccc; max-height: 250px; overflow-y: auto; text-align: left; }
+        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; text-decoration: none; font-size: 1.2rem; box-sizing: border-box; }
+        .close-btn { background: none; border: none; color: #888; margin-top: 20px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div id="gate-screen">
-        <img id="gate-logo" src="https://the-sync.vercel.app/icon.png" alt="Logo">
+        <img id="gate-logo" src="https://the-sync.vercel.app/icon.png">
         <div class="gate-title">THE SYNC</div>
         <div class="gate-subtitle">Capture the Signal. Built by Jowci.</div>
         <button class="enter-btn" onclick="startGame()">ENTER GATE</button>
+        <button class="view-lb-btn" onclick="showLeaderboard(false)">VIEW RANKS</button>
     </div>
 
     <div id="stats-header">
@@ -55,21 +56,29 @@
 
     <div id="leaderboard-modal">
         <div class="lb-box">
-            <h2 style="color:#a78bfa">GLOBAL RANKS</h2>
-            <div id="leaderboard-data" style="margin: 20px 0; color: #ccc;">Syncing Score...</div>
-            <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
-            <button onclick="location.reload()" style="background:none; border:none; color:gray; margin-top:20px; cursor:pointer; text-decoration:underline;">RETRY</button>
+            <h2 style="color:#a78bfa; margin-top: 0;">GLOBAL RANKS</h2>
+            <div id="leaderboard-data">Loading ranks...</div>
+            <a id="share-link" href="#" class="share-btn" style="display:none;">SHARE SCORE</a>
+            <button id="lb-close" class="close-btn" onclick="closeLeaderboard()">CLOSE</button>
         </div>
     </div>
 
     <script>
         let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = false;
+        let playerHandle = "Player"; //
+
         const targets = [
             { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3, dy: 3, w: 65, h: 65 },
             { el: document.getElementById('btn-fc'), x: 200, y: 400, dx: -3, dy: -3, w: 75, h: 75 }
         ];
 
         function startGame() {
+            // Username Prompt
+            const input = prompt("Enter your Farcaster handle:", "@");
+            if (input && input !== "@") {
+                playerHandle = input.replace('@', '');
+            }
+
             document.getElementById('gate-screen').style.display = 'none';
             document.getElementById('stats-header').style.display = 'flex';
             document.getElementById('btn-base').style.display = 'flex';
@@ -96,9 +105,7 @@
             else { fcScore++; document.getElementById('fcVal').innerText = fcScore; }
         }
 
-        document.getElementById('btn-base').addEventListener('mousedown', () => handleTap('base'));
         document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
-        document.getElementById('btn-fc').addEventListener('mousedown', () => handleTap('fc'));
         document.getElementById('btn-fc').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('fc'); });
 
         function startTimer() {
@@ -109,40 +116,55 @@
                 } else {
                     clearInterval(timerLoop);
                     gameActive = false;
-                    endGame();
+                    showLeaderboard(true);
                 }
             }, 1000);
         }
 
-        async function endGame() {
-            const finalScore = baseScore + fcScore;
-            document.getElementById('leaderboard-modal').style.display = 'flex';
+        async function showLeaderboard(isGameOver) {
+            const modal = document.getElementById('leaderboard-modal');
+            const dataDiv = document.getElementById('leaderboard-data');
+            const shareBtn = document.getElementById('share-link');
+            const closeBtn = document.getElementById('lb-close');
             
-            // Set Share Link
-            const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
-            document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
+            modal.style.display = 'flex';
+            dataDiv.innerHTML = "Syncing...";
 
-            try {
-                // Wait for the score to save before fetching leaderboard
+            if (isGameOver) {
+                const finalScore = baseScore + fcScore;
+                const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
+                shareBtn.href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
+                shareBtn.style.display = 'block';
+                closeBtn.innerText = "RETRY";
+                closeBtn.onclick = () => location.reload();
+
+                // Save score with Username
                 await fetch('/api/score', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ username: "Player", score: finalScore }) 
+                    body: JSON.stringify({ username: playerHandle, score: finalScore }) 
                 });
-                
+            }
+
+            try {
                 const res = await fetch('/api/score');
                 const data = await res.json();
                 let html = "";
-                for (let i = 0; i < Math.min(data.length, 10); i += 2) {
+                for (let i = 0; i < Math.min(data.length, 20); i += 2) {
+                    // Displaying @Username and Score
                     html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;">
-                                <span>${(i/2)+1}. ${data[i]}</span>
+                                <span>${(i/2)+1}. @${data[i]}</span>
                                 <span style="color:#a78bfa">${data[i+1]}</span>
                              </div>`;
                 }
-                document.getElementById('leaderboard-data').innerHTML = html || "Score: " + finalScore;
+                dataDiv.innerHTML = html || "No scores yet!";
             } catch (e) {
-                document.getElementById('leaderboard-data').innerHTML = "Score: " + finalScore;
+                dataDiv.innerHTML = "Error loading ranks.";
             }
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').style.display = 'none';
         }
     </script>
 </body>
