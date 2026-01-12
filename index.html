@@ -12,6 +12,17 @@
     <style>
         body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
+        /* Screen Shake Animation for "Crack" Feeling */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(-1deg); }
+            40% { transform: translate(3px, 2px) rotate(1deg); }
+            60% { transform: translate(-3px, 1px) rotate(-1deg); }
+            80% { transform: translate(3px, -2px) rotate(1deg); }
+            100% { transform: translate(1px, -1px) rotate(0deg); }
+        }
+        .shake { animation: shake 0.15s; }
+
         #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
         .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
@@ -19,12 +30,12 @@
         .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; margin-bottom: 15px; width: 280px; }
         .view-lb-btn { background: transparent; color: #8a44f3; border: 2px solid #8a44f3; padding: 12px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; width: 280px; }
 
-        #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; }
+        #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; pointer-events: none; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
         .timer { font-size: 3.5rem; color: white; font-weight: 900; }
 
-        .target { display: none; position: absolute; cursor: pointer; user-select: none; align-items: center; justify-content: center; font-weight: bold; color: white; }
+        .target { display: none; position: absolute; cursor: pointer; user-select: none; align-items: center; justify-content: center; font-weight: bold; color: white; transition: transform 0.05s ease-out; }
         #btn-base { width: 65px; height: 65px; background: #0052ff; border: 3px solid white; box-shadow: 0 0 15px #0052ff; border-radius: 8px; font-size: 1.8rem; }
         #btn-fc { width: 75px; height: 75px; background: #8a44f3; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 20px #8a44f3; font-size: 2.2rem; }
 
@@ -35,7 +46,7 @@
         .close-btn { background: none; border: none; color: #888; margin-top: 20px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
-<body>
+<body id="game-body">
 
     <div id="gate-screen">
         <img id="gate-logo" src="https://the-sync.vercel.app/icon.png">
@@ -65,20 +76,13 @@
 
     <script>
         let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = false;
-        let playerHandle = "Player"; //
-
+        const gameBody = document.getElementById('game-body');
         const targets = [
-            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3, dy: 3, w: 65, h: 65 },
-            { el: document.getElementById('btn-fc'), x: 200, y: 400, dx: -3, dy: -3, w: 75, h: 75 }
+            { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3.5, dy: 3.5, w: 65, h: 65 },
+            { el: document.getElementById('btn-fc'), x: 200, y: 400, dx: -3.5, dy: -3.5, w: 75, h: 75 }
         ];
 
         function startGame() {
-            // Username Prompt
-            const input = prompt("Enter your Farcaster handle:", "@");
-            if (input && input !== "@") {
-                playerHandle = input.replace('@', '');
-            }
-
             document.getElementById('gate-screen').style.display = 'none';
             document.getElementById('stats-header').style.display = 'flex';
             document.getElementById('btn-base').style.display = 'flex';
@@ -101,8 +105,20 @@
 
         function handleTap(type) {
             if (!gameActive) return;
-            if (type === 'base') { baseScore++; document.getElementById('baseVal').innerText = baseScore; }
-            else { fcScore++; document.getElementById('fcVal').innerText = fcScore; }
+
+            // 1. Vibration
+            if (navigator.vibrate) navigator.vibrate(40);
+
+            // 2. Screen Shake (The "Crack" feel)
+            gameBody.classList.remove('shake');
+            void gameBody.offsetWidth; // Trigger reflow
+            gameBody.classList.add('shake');
+
+            if (type === 'base') { 
+                baseScore++; document.getElementById('baseVal').innerText = baseScore; 
+            } else { 
+                fcScore++; document.getElementById('fcVal').innerText = fcScore; 
+            }
         }
 
         document.getElementById('btn-base').addEventListener('touchstart', (e) => { e.preventDefault(); handleTap('base'); });
@@ -138,28 +154,30 @@
                 closeBtn.innerText = "RETRY";
                 closeBtn.onclick = () => location.reload();
 
-                // Save score with Username
-                await fetch('/api/score', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ username: playerHandle, score: finalScore }) 
-                });
+                try {
+                    await fetch('/api/score', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ username: "Player", score: finalScore }) 
+                    });
+                } catch(e) { console.error("Save failed"); }
             }
 
+            // Fixed Leaderboard Fetch
             try {
-                const res = await fetch('/api/score');
+                const res = await fetch('/api/score?t=' + Date.now()); // Prevent caching
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 let html = "";
                 for (let i = 0; i < Math.min(data.length, 20); i += 2) {
-                    // Displaying @Username and Score
                     html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222;">
-                                <span>${(i/2)+1}. @${data[i]}</span>
+                                <span>${(i/2)+1}. ${data[i]}</span>
                                 <span style="color:#a78bfa">${data[i+1]}</span>
                              </div>`;
                 }
                 dataDiv.innerHTML = html || "No scores yet!";
             } catch (e) {
-                dataDiv.innerHTML = "Error loading ranks.";
+                dataDiv.innerHTML = "<div style='color:red;'>Database Sync Error. <br><button onclick='location.reload()' style='color:white; background:none; border:1px solid white; margin-top:10px; padding:5px;'>Retry</button></div>";
             }
         }
 
