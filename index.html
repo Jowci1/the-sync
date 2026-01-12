@@ -12,7 +12,6 @@
     <style>
         body { margin: 0; background-color: black; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* Shake Animation for "Crack" Feeling */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
@@ -23,14 +22,12 @@
         }
         .shake { animation: shake 0.15s; }
 
-        /* THE GATE SCREEN */
         #gate-screen { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         #gate-logo { width: 120px; height: 120px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(138, 68, 243, 0.4); }
         .gate-title { font-size: 3.5rem; font-style: italic; font-weight: 900; color: #4a90e2; letter-spacing: -2px; margin-bottom: 10px; }
         .gate-subtitle { font-size: 1.1rem; color: #888; margin-bottom: 40px; }
         .enter-btn { background: white; color: black; padding: 18px 60px; border-radius: 50px; font-weight: bold; font-size: 1.3rem; border: none; cursor: pointer; text-transform: uppercase; }
 
-        /* GAME UI */
         #stats-header { display: none; justify-content: space-around; width: 100%; max-width: 500px; padding: 20px; font-weight: bold; align-items: center; position: absolute; top: 0; pointer-events: none; }
         .base-label { color: #0052ff; font-size: 1.2rem; } 
         .fc-label { color: #8a44f3; font-size: 1.2rem; }
@@ -40,12 +37,13 @@
         #btn-base { width: 65px; height: 65px; background: #0052ff; border: 3px solid white; box-shadow: 0 0 15px #0052ff; border-radius: 8px; font-size: 1.8rem; }
         #btn-fc { width: 75px; height: 75px; background: #8a44f3; border: 4px solid white; border-radius: 50%; box-shadow: 0 0 20px #8a44f3; font-size: 2.2rem; }
 
-        /* FINAL SCORE POPUP */
         #score-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
         .score-box { width: 85%; text-align: center; border: 2px solid #8a44f3; padding: 30px; border-radius: 24px; background: #111; max-width: 350px; }
-        .final-val { font-size: 4rem; font-weight: 900; color: white; margin: 10px 0; }
-        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 20px; text-decoration: none; font-size: 1.2rem; box-sizing: border-box; }
-        .retry-btn { background: none; border: none; color: #888; margin-top: 20px; cursor: pointer; text-decoration: underline; }
+        .loyalty-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        .app-quote { font-style: italic; color: #aaa; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.4; }
+        .final-val { font-size: 3.5rem; font-weight: 900; color: white; margin-bottom: 10px; }
+        .share-btn { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #0052ff, #8a44f3); color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; text-decoration: none; font-size: 1.1rem; box-sizing: border-box; }
+        .retry-btn { background: none; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body id="game-body">
@@ -59,7 +57,7 @@
 
     <div id="stats-header">
         <div class="base-label">BASE: <span id="baseVal">0</span></div>
-        <div class="timer" id="timerVal">15</div>
+        <div class="timer" id="timerVal">30</div>
         <div class="fc-label">FC: <span id="fcVal">0</span></div>
     </div>
 
@@ -68,7 +66,9 @@
 
     <div id="score-modal">
         <div class="score-box">
-            <h2 style="color:#a78bfa; margin-top: 0;">FINAL SCORE</h2>
+            <div id="loyalty-display" class="loyalty-text">SYNCING...</div>
+            <div id="quote-display" class="app-quote">"Thinking..."</div>
+            <h2 style="color:#a78bfa; margin: 0; font-size: 1rem;">TOTAL SYNC SCORE</h2>
             <div id="final-score-display" class="final-val">0</div>
             <a id="share-link" href="#" class="share-btn">SHARE SCORE</a>
             <button class="retry-btn" onclick="location.reload()">PLAY AGAIN</button>
@@ -76,7 +76,7 @@
     </div>
 
     <script>
-        let baseScore = 0, fcScore = 0, timeLeft = 15, gameActive = false;
+        let baseScore = 0, fcScore = 0, timeLeft = 30, gameActive = false;
         const gameBody = document.getElementById('game-body');
         const targets = [
             { el: document.getElementById('btn-base'), x: 50, y: 250, dx: 3.5, dy: 3.5, w: 65, h: 65 },
@@ -106,8 +106,6 @@
 
         function handleTap(type) {
             if (!gameActive) return;
-
-            // Haptic & Shake
             if (navigator.vibrate) navigator.vibrate(40);
             gameBody.classList.remove('shake');
             void gameBody.offsetWidth; 
@@ -139,10 +137,30 @@
         function endGame() {
             const finalScore = baseScore + fcScore;
             document.getElementById('final-score-display').innerText = finalScore;
+            
+            const loyaltyDiv = document.getElementById('loyalty-display');
+            const quoteDiv = document.getElementById('quote-display');
+            let loyaltyTag = "";
+
+            // Personality/Loyalty Logic
+            if (baseScore > fcScore) {
+                loyaltyTag = "🔵 Your loyalty lies with Base";
+                loyaltyDiv.style.color = "#0052ff";
+                quoteDiv.innerText = "Base is for everyone. It’s a secure, low-cost, builder-friendly Ethereum L2 built to bring the next billion users on-chain.";
+            } else if (fcScore > baseScore) {
+                loyaltyTag = "🟣 Your loyalty lies with Farcaster";
+                loyaltyDiv.style.color = "#8a44f3";
+                quoteDiv.innerText = "Farcaster is a sufficiently decentralized social network. It is open, so anyone can build an app to read and write data.";
+            } else {
+                loyaltyTag = "⚡ You are perfectly synced";
+                loyaltyDiv.style.color = "white";
+                quoteDiv.innerText = "A perfect balance between the social layer and the chain. You are the ultimate builder.";
+            }
+
+            loyaltyDiv.innerText = loyaltyTag;
             document.getElementById('score-modal').style.display = 'flex';
             
-            // Fixed Share Link
-            const text = encodeURIComponent(`I achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
+            const text = encodeURIComponent(`${loyaltyTag}!\nI achieved a Sync Score of ${finalScore} on THE SYNC! 🔵🟣\nBuilt by @jowci`);
             document.getElementById('share-link').href = `https://warpcast.com/~/compose?text=${text}&embeds[]=${window.location.origin}`;
         }
     </script>
